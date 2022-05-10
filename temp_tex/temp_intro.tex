@@ -1,0 +1,12 @@
+From their studies, students learn that there exist three main ways of visualising combinational logic  \cite{visualise_boolean}: 
+\begin{enumerate}
+    \item \textbf{Boolean Algebra}, which represents the logic as a function: $Outputs = f(Inputs)$, with the function consisting of Boolean operations.
+    \item \textbf{Truth Tables}, which represent the logic by listing all input combinations and their associated outputs.
+    \item \textbf{Component-Level Schematics}, which represent the logic as it would be implemented in hardware using logic gates.
+\end{enumerate}
+
+As Issie is a hardware design tool, combinational logic is entered and visualised as a schematic. However, besides the ability to see the outputs for a specific input combination one at a time, it does not allow for logic to be entered or visualised using any of the other two methods. While schematics are great at showing how the logic propagates through real hardware, they can become very large and unwieldy as the complexity of the logic increases. In such a situation, the schematic can feel divorced from the original design specification.
+
+Truth tables, on the other hand, can turn a messy combination of gates and multiplexers into an easily understandable relationship between circuit inputs and outputs. Moreover, giving students the ability to interactively set certain inputs to \textit{HIGH}, \textit{LOW}, or \textit{Don't Care (X)}, will simplify the truth tables, providing an even clearer view of the logic's behaviour in specific situations. Such a feature is likely to help students grow their understanding of what they are designing, and may make debugging easier. \\
+Alongside visualising existing logic, truth tables can also be a significantly more intuitive way for creating new logic. Generating schematics from user-entered truth tables could drastically reduce time spent designing hardware components which implement simple logic but require many gates and connections. 
+Thus, there is a strong case for finding alternative ways to visualise and input combinational logic which compliment Issie's existing schematic design framework, as such additions are likely to increase Issie's effectiveness as an education-focused hardware design platform and benefit students at Imperial College and potentially other educational institutions.

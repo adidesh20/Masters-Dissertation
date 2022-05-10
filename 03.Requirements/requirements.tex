@@ -1,0 +1,83 @@
+\chapter{Requirements Capture} \label{chap:requirements}
+\section{Requirements for Logic Visualisation}
+\subsection*{Essential Requirements}
+The improved version of Issie delivered by this project must be able to:
+\begin{itemize}
+    \item[\textbf{E1.1}] Analyse a schematic containing \textbf{only combinational logic} and display a standard truth table for that sheet.
+    \medskip
+    \item[\textbf{E1.2}] Analyse part of a schematic selected by the user containing \textbf{only combinational logic} and display a standard truth table for that selection.
+    \begin{itemize}
+        \item[\textbf{E1.2.1}] New inputs and/or outputs should be created temporarily (if necessary) to feed inputs and/or read outputs from the selected logic.
+        \item[\textbf{E1.2.2}] It must be clear which newly generated inputs/outputs shown in the truth table correspond to inputs/outputs into the selected logic.
+    \end{itemize}
+    \medskip
+    \item[\textbf{E1.3}] Have a truth table generating algorithm which can handle:
+    \begin{itemize}
+        \item[\textbf{E1.3.1}] Multi-bit inputs and outputs. Any temporary inputs/outputs created while generating a truth table for a selected logic block must have correct widths.
+        \item[\textbf{E1.3.2}] Custom Components (sub-sheets), including when they are part of selections.
+        \item[\textbf{E1.3.3}] Displaying inputs, outputs, and viewers.
+    \end{itemize}
+    \medskip
+    \item[\textbf{E1.4}] Give users an option, when possible, to reduce the truth table based on patterns in the logic (e.g. Don't Cares).
+    \medskip
+    \item[\textbf{E1.5}] Give users the option to filter the truth table by fixing input or output values.
+    \medskip
+    \item[\textbf{\textbf{E1.6}}] Truth Tables must be displayed in a clear and easy to understand format, and features involving truth tables (e.g. filtering, reducing etc.) must be presented in an intuitive way.
+    \item[\textbf{E1.7}] Use the above features to give users a clearer insight into the digital logic on the schematic, or to further reinforce their existing understanding.
+\end{itemize}
+
+\subsection*{Desirable Features}
+\begin{itemize}
+    \item[\textbf{D1.1}] Generate and display algebraic truth tables when possible (e.g. multiplexer and adder circuits).
+    \medskip
+    \item[\textbf{D1.2}] Provide an interactive truth table interface.
+    \begin{itemize}
+        \item[\textbf{D1.2.1}] Mousing over parts of the truth table could have effects on the schematic (e.g. annotations or highlighting).
+        \item[\textbf{D1.2.2}] Users can rearrange order of columns/rows in the truth table.
+    \end{itemize}
+    \medskip
+    \item[\textbf{D1.3}] Let the user access truth table related functionality without going through numerous steps \textbf{while} also keeping the number of buttons on the screen to a minimum to avoid cluttering the interface. 
+    \medskip
+    \item[\textbf{D1.4}] Extend truth table generation to sequential circuits in a similar way to the step simulator by allowing users to view the truth table at different clock ticks. When combined with the option to filter a truth table, this feature could be quite useful.
+    \medskip
+    \item[\textbf{D1.5}] Upon generation of a truth table for selected logic, display the selected logic as its own schematic including any temporarily generated inputs/outputs.
+    \medskip
+    \item[\textbf{D1.6}] Provide some kind of testbench functionality for combinational circuits, as truth tables are a complete definitive description of the behaviour of logic. Instructors could supply a testbench file containing the truth table for the correct solution, and Issie could determine the input combinations for which the user's code did not match the required output.
+    \medskip
+\end{itemize}
+
+\section{Requirements for Logic Input}
+\subsection*{Essential Requirements}
+\begin{itemize}
+    \item[\textbf{E2.1}] Generate a correct Issie Custom Component using a user-supplied truth table.
+    \medskip
+    \item[\textbf{E2.2}] Users should be able to supply a truth table through Issie's GUI, or through a specified file.
+\end{itemize}
+
+\subsection*{Desirable Features}
+\begin{itemize}
+    \item[\textbf{D2.1}] Generate a correct Issie schematic using a user-supplied truth table, with the option for SOP and POS interpretations.
+    \begin{itemize}
+        \item[\textbf{D2.1.1}] Components in the generated schematic must be clearly spaced and laid out in a reasonable form.
+        \item[\textbf{D2.1.2}] Use intelligent analysis or Boolean Algebra to generate a schematic using as many components in Issie's catalogue as possible.
+    \end{itemize}
+    \medskip
+    \item[\textbf{D2.2}] If intelligent analysis is implemented, then use the same mechanism to simplify existing schematics.
+\end{itemize}
+
+\section{Software/Documentation Quality Requirements}
+\subsection*{Essential requirements}
+\begin{itemize}
+    \item[\textbf{E3.1}] Deliver performant, working, bug-free code which adheres to Issie's code guidelines and other principles such as "MVU-ness".
+    \medskip
+    \item[\textbf{E3.2}] Write comments in the delivered code which adequately explain it such that it may be worked on in the future by other developers. 
+    \medskip
+    \item[\textbf{E3.3}] Provide any other necessary documentation
+\end{itemize}
+
+\subsection*{Desired features}
+\begin{itemize}
+    \item[\textbf{D3.1}] Deliver a tweaked, or possibly partially redesigned UI which exposes all Issie features in a straightforward and intuitive way to the user, with a focus on extensibility (i.e. can the UI accommodate for future extensions to Issie?)
+    \medskip
+    \item[\textbf{D3.2}] Update the Issie website with information about any newly added features.
+\end{itemize}

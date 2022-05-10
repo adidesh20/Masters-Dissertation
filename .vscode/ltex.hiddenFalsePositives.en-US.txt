@@ -1,0 +1,2 @@
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\QA basic task/requirement is broken into several parts - with each of these parts being written as an individual function .\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Q\"individual function\" does not refer to a single F function, but to a top-level function which uses groups of helper and sub-functions\\E$"}

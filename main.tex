@@ -1,0 +1,98 @@
+\documentclass[a4paper, twoside]{report}
+\usepackage[utf8]{inputenc}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+\usepackage[
+backend=biber,
+style=ieee,
+sorting=none
+]{biblatex}
+\addbibresource{ref.bib}
+
+% Command to get a normal looking # for F#
+\newcommand{\fsharp}{{\fontfamily{phv}\selectfont \# }}
+
+\newcommand{\codestyle}[1]{{\fontfamily{cmtt}\selectfont #1}}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=black]{hyperref}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{wrapfig}
+\usepackage{color}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{tabularx,array}
+\usepackage[parfill]{parskip}
+\usepackage{upquote}
+ 
+\lstdefinelanguage{FSharp}%
+{morekeywords={let, new, match, with, rec, open, module, namespace, type, of, member, % 
+and, for, while, true, false, in, do, begin, end, fun, function, return, yield, try, %
+mutable, if, then, else, cloud, async, static, use, abstract, interface, inherit, finally },
+  otherkeywords={ let!, return!, do!, yield!, use!, var, from, where, by },
+  keywordstyle=\color{bluekeywords},
+  sensitive=true,
+  basicstyle=\ttfamily,
+	breaklines=true,
+  xleftmargin=\parindent,
+  aboveskip=\bigskipamount,
+	tabsize=4,
+  morecomment=[l][\color{greencomments}]{///},
+  morecomment=[l][\color{greencomments}]{//},
+  morecomment=[s][\color{greencomments}]{{(*}{*)}},
+  morestring=[b]",
+  showstringspaces=false,
+  literate={`}{\`}1,
+  stringstyle=\color{redstrings},
+}
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
+
+
+%\setlength{\parindent}{0pt}
+
+\titleformat{\chapter}[display]
+  {\Huge\bfseries}
+  {}
+  {0pt}
+  {\thechapter.\ }
+\titleformat{name=\chapter,numberless}[display]
+  {\Huge\bfseries}
+  {}
+  {0pt}
+  {}
+
+\title{FYP Interim Report}
+\author{Aditya Deshpande }
+\date{November 2021}
+
+\begin{document}
+\input{coversheet}
+\input{00.Beginning/beginning}
+\input{01.Introduction/intro}
+\input{02.Background/background}
+\input{03.Requirements/requirements}
+\input{04.ImpPlan/imp_plan}
+\input{05.EvalPlan/eval_plan.tex}
+
+\printbibliography
+
+\input{Appendices/apps}
+\end{document}

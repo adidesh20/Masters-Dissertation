@@ -1,0 +1,269 @@
+\chapter{Background} \label{chap:background}
+
+\section{Pedagogical Considerations} \label{sec:ped_cons}
+Given  the the overall project aim of making it easier for students to understand the use of logic in digital design, any features added to Issie must enhance the learning experience of its users. Many decisions related to the project, such as which features to add, the UI/UX design, and the level of interactivity will all be made through the lens of pedagogy.
+\subsection{Memory Models}
+One of the key facets of learning is the long-term retention of key concepts and relationships. The Atkinson-Shiffrin multi-store model \cite{memory_model} provides a good framework for modelling the workings of human memory, and many task-specific models, theories, and techniques have been derived from it. The aim of any effective learning application should be to convey and revisit information in such a way that it succeeds in reaching the Long Term Memory store.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=\textwidth]{02.Background/atkinson.eps}
+    \caption{The Atkinson-Shiffrin Multi-Store Model}
+    \label{fig:atkinson}
+\end{figure}
+
+As shown in Figure \ref{fig:atkinson}, the Atkinson-Shiffrin Multi-Store Model states that humans perceive information through external stimuli, and that information is encoded as three different types of stimulus. \textbf{Visual} encoding encodes information in pictures and diagrams, \textbf{Semantic} encoding encodes information in words and their meanings, while \textbf{Acoustic} encoding encodes information in sounds. This encoded information is processed by the sensory register. If attention is paid to this information, it travels into short-term memory, otherwise it decays within half a second and is forgotten. For information to progress from short-term to long-term memory, a process of repetition called maintenance rehearsal is necessary \cite{multi_store}, in which the information is repeated within the the learner's mind. For visually encoded information, this could be through repeated visualisation of diagrams or patterns in what the learner sees on a screen, while for acoustically encoded information this is achieved through the learner playing back the soundbite in their head. A key take-away from this memory model is that human brains process different information encodings independently, meaning that even if one encoding type is saturated with information, additional information can still be conveyed to the learner using an alternative encoding method. 
+
+In its current form, Issie encodes information about the digital circuit both visually (circuit diagram, error highlighting etc.) and semantically (error messages, simulation outputs). No information is encoded acoustically, however outside of chimes for errors there is not much scope for implementation of sounds. Furthermore, students will receive plenty of auditory information in the form of teaching from lab assistants and conversation with their peers. Any extensions added to Issie by this project should therefore focus on conveying information to users through a combination of diagrams with appropriate annotations and informative text.
+
+\subsection{Educating Engineers} \label{subsec:educating_engineers}
+In 1992, Fleming and Mills proposed that there were four categories of how students learned. These are \textbf{visual}, \textbf{auditory}, \textbf{reading/writing}, and \textbf{kinesthetic} \cite{Fleming1992}. Most learners will learn using all of these methods, however will exhibit a preference towards one or two. Studies have shown that engineers have a preference towards visual and kinesthetic learning techniques \cite{vark_engineers}. The visual aspect means that engineers prefer information be conveyed to them through diagrams, patterns, and highlighted meaningful symbols. On the other hand, the kinesthetic aspect means that engineers prefer to learn through demonstrations, simulations, and their own experiences. The existence of practical lab sessions and Issie itself lends itself to a focus on kinesthetic learning; students explore concepts they have been taught about in lectures by building and simulating combinational logic. Therefore, the results of the VARK survey concur with the current teaching style in the EEE Departement at Imperial College.
+
+\subsection{Cognitive Theories of Self Efficacy and Constructivism} \label{subsec:self_efficacy}
+There are more factors that contribute towards an effective learning experience than just the conveyance of information. The learning process must be structured in such a way that students remain motivated while learning complex concepts. A ten-year longitudinal study \cite{motivation} found that there is a significant correlation between students who are motivated, therefore having high self-confidence, and academic attainment. Therefore, while developing educational tools like Issie, an emphasis must be placed on communicating information to students in such a way that they retain the belief that they can successfully learn the content. This approach aligns well with the theory of constructivism in education, which seeks to educate students by having them discover knowledge intuitively in contrast to traditional methods in which a student is considered an 'empty vessel' waiting to be filled up by a teacher\cite{construct}. The rationale behind the theory is that this self-discovery of knowledge will build a stronger conceptual understanding of what is being learnt. Constructivism aligns well with teaching styles that suit kinesthetic learners, as both approaches focus on students learning through their own experiences. Engineers tend to be kinesthetic learners, therefore, this project should aim to improve Issie in such a way that students are able to interactively and iteratively build their understanding of digital electronics and circuit design by themselves.
+
+\section{Combinational Logic}
+Combinational logic is a type of digital logic in which the output of the logic is a pure function of its present inputs \cite{comblog_wiki}.This means that combinational logic is memoryless; it is not affected by any previous outputs. This is in contrast to sequential logic, for which the output is dependent on present input values and some internal state derived from previous outputs.
+
+\subsection{Boolean Operators and Algebra}
+The aforementioned pure function which maps inputs to outputs can be written as a Boolean expression. A Boolean expression, much like traditional mathematical expression, features a set of input terms combined using operators. There exist three fundamental Boolean operators \cite{gregg_boolean}:
+\begin{itemize}
+    \item[] \textbf{NOT}, a unary operator which outputs the inverse of the input.
+    \item[]\textbf{AND}, a binary operator which outputs HIGH when both inputs are HIGH and LOW otherwise. Denoted by 
+    \item[] \textbf{OR}, a binary operator which outputs HIGH when either of the inputs are HIGH, and LOW otherwise
+\end{itemize}
+Other Boolean operators, such as \textbf{NAND}, \textbf{NOR}, and \textbf{XOR} also exist, but can be defined using a combination of the three fundamental operators.
+Therefore, the first and most basic way of visualising combinational logic is simply through writing the Boolean expression which represents it. However, it can be difficult to quickly understand what some logic does using just Boolean expressions. Take for example the following Boolean equation for output $Y$:
+\begin{equation}
+       Y = \overline{S}.A + S.B
+       \label{equ:MuxEq}
+\end{equation}
+While the operations performed are clear, it may not be very clear on first inspection to an inexperienced student what the expression actually achieves. Furthermore, Boolean expressions grow in complexity as schematics become larger, making them even tougher to understand at a glance.
+
+\subsection{Schematic Diagrams}
+Schematic diagrams give the hardware representation of the combinational logic, and are the primary way of creating and visualising combinational logic in Issie. At their simplest, they consist purely of logic gates; these gates each correspond to a Boolean operator. However, in practice (and Issie) schematics are at a slightly higher-level, with certain combinational components (which can be built from gates) pre-created for the user. For example, Equation \ref{equ:MuxEq} represents a 2-bit Multiplexer, which is a component available in Issie's catalogue. The recall of stored knowledge due to the visual stimulus of the multiplexer component on the diagram is much more likely compared to the semantic stimulus of the Boolean expression. However, as a schematic increases in size, the number of components may become so large that holding all of the visual stimuli in short-term memory is unfeasible. Issie combats this by letting users modularise their schematic through custom components - this is effective but users still have to remember what each custom component does.
+
+\subsection{Truth Tables} \label{subsec:TruthTables}
+A truth table represents a given combinational logic function; featuring all input combinations on the left, and their corresponding output(s) on the right. As the truth table maps all possible inputs to their output, it is trivial to look up the behaviour of the logic in a given scenario. A very basic example is the truth table for the Boolean \textbf{AND} operator, shown in Table \ref{tab:And_TT}.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{c|c||c}
+     \textbf{A} & \textbf{B} & \textbf{C} \\
+     \hline
+     0 & 0 & 0  \\
+     0 & 1 & 0  \\
+     1 & 0 & 0  \\
+     1 & 1 & 1
+    \end{tabular}
+    \caption{Truth Table for the Boolean AND operator ($C = A.B$)}
+    \label{tab:And_TT}
+\end{table}
+
+Given that a truth table defines some logic using an exhaustive set of examples, it could be said that truth tables is ideal for kinesthetic learners. This exhaustive property can also be used to test for logical equivalence. Suppose the claim is made that two schematics, with one schematic featuring far fewer components than the other, are logically identical. Equivalence could be confirmed by simply checking if the truth tables for the two schematics are the same. 
+
+However, a disadvantage of using truth tables to visualise combinational logic is that they can very rapidly grow in size. For logic with $n$ inputs, the number of rows in the associated truth table is $2^n -1$. Thus, Issie schematics with a large number of inputs would result in very long truth tables, which would likely intimidate the user. The size of generated truth tables could be reduced by filtering them based on user selections, or through truth table reduction methods.   
+
+\subsubsection{Reduction using Don't Cares}
+A "Don't Care" term in a truth table can mean different things based on it's positioning. It is more commonly seen on the right-hand side of a truth table, signifying that a given input is invalid or the output it generates has no use \cite{1969logic}. This information is often used when attempting to simplify Boolean expressions using Karnaugh maps, but it is not very useful for reducing the number of rows in a truth table. On the other hand, a Don't Care term in an input row signifies that the particular input has no effect on the eventual output of the logic for that combination. An example of this can be seen in the standard Truth Table for a 2-bit Multiplexer, found in Figure \ref{subfig:muxTT_standard}. The first and third row both have an output value of 0, with the only difference being the change in the value of $B$. Given that $B$ can only take two values, this shows that when $A=0$ and $S=0$, the value of $B$ does not affect the output - therefore we "don't care" about B. Rows one and three can therefore be collapsed into one row, with the entry for the $B$ column being replaced with an "X". This process can be repeated until all such row combinations have been collapsed. The results from this process can be seen in Table \ref{subfig:muxTT_dc}. The length of the truth table has been reduced by 25\%, and the actual semantic function of what the multiplexer does is much clearer as well.
+
+\subsubsection{Algebraic Truth Tables}
+While reduction with Don't Cares is useful, it still does not convey what the multiplexer does in the most concise manner. Table \ref{subfig:muxTT_alg} shows a truth table which has been heavily reduced and provides the most clear insight into what the multiplexer does - $A$ is propagated to the output when the selection input ($S$) is low, and $B$ is propagated when $S$ is high. Having functionality which could create similar tables for user-created schematics would be highly useful.
+
+\begin{table}[h]
+    \centering
+    \subfloat[Standard Truth Table]{
+    \label{subfig:muxTT_standard}
+    \begin{tabular}{c|c|c||c}
+     \textbf{A} & \textbf{B} & \textbf{S} & \textbf{OUT} \\
+     \hline
+     0 & 0 & 0 & 0 \\
+     0 & 0 & 1 & 0 \\
+     0 & 1 & 0 & 0\\
+     0 & 1 & 1 & 1\\
+     1 & 0 & 0 & 1\\
+     1 & 0 & 1 & 0\\
+     1 & 1 & 0 & 1\\
+     1 & 1 & 1 & 1\\
+    \end{tabular}}
+    \medskip
+    \subfloat[Reduced with DC]{
+    \label{subfig:muxTT_dc}
+    \begin{tabular}{c|c|c||c}
+     \textbf{A} & \textbf{B} & \textbf{S} & \textbf{OUT} \\
+     \hline
+     0 & X & 0 & 0 \\
+     X & 0 & 1 & 0 \\
+     X & 1 & 1 & 1\\
+     1 & X & 0 & 1\\
+     0 & 0 & X & 0 \\
+     1 & 1 & X & 1
+    \end{tabular}}
+    \medskip
+    \subfloat[Algebraic Truth Table]{
+    \label{subfig:muxTT_alg}
+    \begin{tabular}{c|c|c||c}
+     \textbf{A} & \textbf{B} & \textbf{S} & \textbf{OUT} \\
+     \hline
+     A & B & 0 & A \\
+     A & B & 1 & B
+    \end{tabular}}
+    \caption{Truth Tables for a 2-bit Multiplexer}
+    \label{tab:muxTTs}
+\end{table}
+
+
+\section{An Overview of Issie's Technology Stack} \label{sec:techstack}
+
+The reasoning and process behind the decisions made for Issie's technology stack can be found in Marco Selvatici's dissertation on DEFlow, the predecessor to Issie \cite{marco_diss}. This section describes the technology stack, as well as evaluating and reaffirming why Issie's technology stack is well suited.
+
+\subsection{Programming Language} \label{subsec:fsharp}
+Issie is written in F\fsharp, an open-source, cross-platform, interoperable programming language for writing succinct, robust and performant code \cite{fsharp}. It is functional-first; meaning that it contains many features found in functional languages and encourages a functional programming style while also allowing programmers the flexibility to use the programming styles of other paradigms. Pure functional programming languages adopt a philosophy of declarative programming and immutable data; data values cannot be updated after initial assignment, and functions take this data as input and map it to output data. These functions are deterministic, meaning that their output is solely dependent on the value of their inputs and that there is no internal state affecting the behaviour of the function. This differs from the more common imperative style of programming where code is treated as a sequential list of instructions which mutate program data/state. The deterministic nature of functions in pure functional programming makes them very easy to understand, as operations on data have no side-effects and are therefore very easy to track. Not only does this make debugging easier, but it leads to fewer overall bugs in the code. A large-scale study of programming languages and code quality on Github \cite{functionaldebug} found that "Functional languages have a smaller relationship to defects than other language classes, where as procedural languages are either greater than average or similar to the average." The study also found that the "Functional-Static-Strong-Managed" class of languages (i.e. languages that are functional, statically and strongly typed with in-built memory management) are  less likely than average to result in defect-fixing commits on Github.
+While not a part of the study, F\fsharp does belong to this class of languages, and is therefore a wise choice of programming language for Issie. F\fsharp features a Hindley-Milner type system, which provides great type inference. This allows for F\fsharp to be statically typed while eliminating the need for type annotations in the code. This results in clean-looking and succinct code while still maintaining the benefits of static typing.  Furthermore, as types can be inferred on the fly by IDEs such as Visual Studio, it is much easier for the programmer to track the correctness of the program. 
+
+\begin{wrapfigure}{l}{0.5\textwidth} 
+  \begin{center}
+    \includegraphics[width=0.40\textwidth]{02.Background/patternmatch.png}
+  \end{center}
+  \caption{An example of incomplete Pattern Matching in F\fsharp, with a warning from the compiler}
+  \label{fig:patternmatch}
+\end{wrapfigure}
+
+One such example is found when pattern matching, as seen in Figure \ref{fig:patternmatch}. The function \codestyle{printColor} takes as input some colour of the rainbow (type \codestyle{RainbowColor}) and prints the colour. The type system allows for the IDE to first infer the type of the variable \codestyle{color}, and then realise that the pattern match does not cover the case for when \codestyle{color} is Green. Mousing over the warning line in Visual Studio gives the following message: "Incomplete pattern matches on this expression. For example, the value 'Green' may indicate a case not covered by the pattern(s)." Such hints are immensely useful for the programmer. The advantage of such checks being performed before and at compile-time is that it cuts the number of errors at run-time, which tend to be more disruptive.
+
+F\fsharp also helps protect against runtime errors through the use of Monadic types. Sometimes, certain actions in a program may need to return \textit{nothing}, such as an unsuccessful lookup in a Map/Dictionary or if there is an absence of some data. Usually such messages are communicated within the program using either exceptions or NULLs which have to be caught and handled. If not tracked and handled appropriately, NULLs in particular can lead to some very nasty and hard-to-debug runtime errors. F\fsharp allows programmers to minimise the use of exceptions and avoid the use of NULLs using the \codestyle{Option} and \codestyle{Result} types. The \codestyle{Option} type can take the value \codestyle{Some <type a>} or \codestyle{None}, giving the programmer a safe way to indicate nothing without using NULLs. The \codestyle{Result} type can reflect success (\codestyle{Ok <type a>}) or failure (\codestyle{Error <type b>}), giving the programmer a safe way to propogate errors through their code without raising exceptions or returning NULL. 
+
+While F\fsharp has the many features and benefits of pure-functional languages and strongly encourages the programmer to use them, it is an impure functional language and does allow the programmer to use other styles of programming. For example, mutable state in functions is allowed by the use of the \codestyle{mutable} keyword upon definition. This allows for some very useful flexibility; programmers can use the default functional style in most places, and can selectively choose where to introduce functionally impure constructs such as mutable state. An example of this in Issie is the Step Simulator, which uses mutable arrays to represent the value of component inputs/outputs at different clock cycles.
+As most of the features mentioned in this section are either unique to or far better implemented in F\fsharp compared to other common app development languages such as JavaScript or Python, and that F\fsharp belongs to the most bug-free class of languages, it can be said that Issie's choice of programming language is apt and ideal.
+
+\subsection{Ecosystem} \label{subsec:ecosystem}
+\subsubsection{Electron}
+Issie makes use of Electron, a framework for building desktop applications using JavaScript, HTML, and CSS. Electron comes bundled with the powerful open-source Chromium browser and Node.js, a runtime environment that lets JavaScript code execute outside of a browser. The advantage of this approach is that a developer can create a cross-platform application without any experience of programming native applications for any platform \cite{electrondocs}. Given that Electron allows for easy development of a cross-platform application and does not require native application development knowledge, it is perfect for a project like Issie which is worked on by multiple students over time. 
+
+\subsubsection{Fable}
+While Electron is a great framework, it requires a JavaScript codebase. JavaScript is a weakly and dynamically typed imperative language - making it a sub-optimal choice for the development of Issie. The gap between development and deployment is bridged by \textbf{Fable} \cite{fableio}, a compiler that brings F\fsharp to the JavaScript ecosystem. Fable compiles F\fsharp code to clean JavaScript code which can be run by Electron. Fable also includes bindings for React \cite{reactjs}, a highly performant JavaScript library for building user interfaces; this allows Issie's F\fsharp code to create React elements which Fable will compile to their respective JavaScript implementations.
+
+\subsection{User Interface and Rendering}
+A well-written and structured Graphical User Interface (GUI) is an essential component of any application, but it becomes even more vital in the context of an application like Issie which prioritises an interactive and intuitive interface. In Issie, most of the user's interaction with the program is done using the mouse; clicking, dragging, and hovering. This means that the UI code must be able to handle a constant stream of pseudo-random mouse events and deal with them quickly and appropriately. It must also be maintainable and extensible to easily allow for more functionality to be added over time.
+
+\subsubsection{Elm, Elmish, and MVU}
+The Elm Architecture \cite{elmarch}, also known as the MVU Architecture, is a pattern for creating interactive programs which emerged from the Elm programming language. Elm \cite{elm} is a purely functional language for creating websites and web apps which compiles to JavaScript - this is similar to how using F\fsharp with Fable allows functional F\fsharp code to be compiled to JavaScript for a web app. Issie uses the Elmish library \cite{elmishdocs}, which brings Elm's MVU architecture to F\fsharp and integrates well with Fable, enabling Issie's smooth and robust GUI.
+
+The MVU architecture gains its name from the three parts it splits the UI code into:
+\begin{itemize}
+    \item[] \textbf{Model:} A data structure which stores the state of the application. In Issie this is a very large record, containing lots of information ranging from the results of a simulation to which components are selected and highlighted.
+    \item[] \textbf{View:} Specifies how the information in the model (application state) should be displayed to the user. The developer writes a function to turn the model into HTML/CSS equivalents, and Elm (or Fable if using F\fsharp with Elmish) converts this to actual HTML/CSS and renders it. 
+    \item[] \textbf{Update:} A way to update the application state triggered by events such as user input. These events are communicated within the program using \textit{messages}, which are triggered by the user interacting with the GUI. The update function interprets the message and returns an updated version of the model. 
+\end{itemize}
+
+An initial Model is specified in the code, which is rendered by the View function on application startup. The user can then interact with the application - each interaction will generate a message which is passed to the update function. The update function processes this message and, if required, will return an updated model which reflects the effects of the interaction. On its next invocation, the View function will render this updated application state, showing the user the result of their interaction.
+The traditional process for rendering HTML is shown in Figure \ref{fig:tradDOM}. The HTML is parsed and a DOM (Document Object Model) is constructed; this is a tree representation of the HTML. Whenever the website/web app state changes, certain parts of the generated HTML change too. The DOM tree must be updated to reflect these changes, however this is often a slow process for large web apps with a large number of nodes in the DOM tree, resulting in the UI appearing sluggish. Elm combats this by using an intermediate \textbf{Virtual DOM}, a lightweight and optimised version of the main DOM tree on which operations are cheap. As shown in Figure \ref{fig:virtualDOM}, Elm exposes this virtual DOM to the programmer, who specifies how the state should be viewed in the View function. For each change of state, a new virtual DOM is constructed and compared to the previous virtual DOM. Through this, Elm can determine the exact change to the UI. Both the construction and comparison are fast due to the lightweight nature of the virtual DOM. Elm repeats this process for multiple changes to the UI, creating a batch of updates to be performed on the actual DOM tree at once. This method significantly reduces the per-update penalty for updating the DOM, improving the performance of the web app. Another advantage of this method is that the task of efficiently updating the DOM is abstracted away from the programmer, leaving them with only the task of specifying how their website or web app should look.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=\textwidth]{02.Background/traditionalDOM.eps}
+    \caption{How browsers traditionally render HTML using a DOM \cite{virtualdom}}
+    \label{fig:tradDOM}
+\end{figure}
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=\textwidth]{02.Background/elm-virtual-dom.eps}
+    \caption{The Elm Architecture \cite{virtualdom}}
+    \label{fig:virtualDOM}
+\end{figure}
+
+\subsubsection{React}
+React, as mentioned earlier, is a library for building user interfaces. In the Issie project, Elmish uses React for rendering the UI. Thus, the virtual DOM mentioned previously is actually the React Virtual DOM, which is a React Element with many children. React Elements are simple objects, and are therefore cheap to create \cite{reactrender}, meaning that operations on the React DOM are computationally inexpensive. The View function returns a React Element which shows the current state of the UI. React improves the performance of an application by only re-rendering elements when necessary. The React equivalent of the process mentioned previously where virtual DOMs are compared to find UI changes is called \textit{Reconciliation} \cite{reactrender}.
+
+React also provides a further method for increasing performance: memoization \cite{reactcache}. Memoization is most useful when working with components whose state is partially dependent on computationally intensive calculation. Under traditional React, this value would be re-calculated on every render, even if it had not changed. This increases the amount of time each render takes. An example of this would be the result of the addition of two very large numbers ($a + b$), which is a very CPU intensive task. Memoization combats this by caching the previous value of the computation and only performing the calculation whenever $a$ or $b$ changes. Issie already uses some memoization in its code for the Step Simulator: after a sheet is simulated for the first time the simulation is cached. If the sheet hasn't changed the next time a simulation is started, the cached simulation is used instead of building a new one, increasing performance. 
+\subsubsection{Fulma}
+Fulma \cite{fulmaio} is a F\fsharp library which provides a wrapper around Bulma \cite{bulmaio}, an open-source CSS framework which provides ready-to-use front-end components for building responsive web interfaces. Fulma brings these components to F\fsharp for use with Fable React. React components such as buttons, forms, and tables can easily be specified in the F\fsharp code using the functions provided by Fulma. Listing \ref{lst:fulmatable} shows the F\fsharp code for generating a table using Fulma, while Figure \ref{fig:fulmatable} shows the rendered table.
+
+\begin{lstlisting}[language=FSharp, caption={Simple F\fsharp code for generating a table with Fulma \cite{fulmatable}}, captionpos=b, label={lst:fulmatable}]
+    Table.table [ Table.IsBordered
+              Table.IsNarrow
+              Table.IsStriped ]
+    [ thead [ ]
+        [ tr [ ]
+             [ th [ ] [ str "Firstname" ]
+               th [ ] [ str "Surname" ]
+               th [ ] [ str "Birthday" ] ] ]
+      tbody [ ]
+        [ tr [ ]
+            [ td [ ] [ str "Maxime" ]
+              td [ ] [ str "Mangel" ]
+              td [ ] [ str "28/02/1992" ] ]
+          tr [ ClassName "is-selected" ]
+             [ td [ ] [ str "Jane" ]
+               td [ ] [ str "Doe" ]
+               td [ ] [ str "21/07/1987" ] ]
+          tr [  ]
+             [ td [ ] [ str "John" ]
+               td [ ] [ str "Doe" ]
+               td [ ] [ str "11/07/1978" ] ] ] ]
+\end{lstlisting}
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{02.Background/Fulma Table.png}
+    \caption{Fulma Table Example}
+    \label{fig:fulmatable}
+\end{figure}
+
+
+\subsubsection{Overview}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=\textwidth]{02.Background/Stack.png}
+    \caption{An Overview of Issie's Technology Stack}
+    \label{fig:techstack}
+\end{figure}
+We can bring the above sections together to get an overview of Issie's Technology Stack, which is presented in Figure \ref{fig:techstack}. The core logic of the Issie application is written in F\fsharp, with libraries allowing for React components to be created in F\fsharp (Fable and Fulma). The Elmish library provides the MVU framework and methods for bringing together the Model data structure, View function, and Update function. Elmish React then handles the transition from the generic Elmish view to React, after which Fable compiles all of this F\fsharp code to JavaScript for React to render. All of this runs within Electron, allowing Issie to run as a desktop application despite having the technology stack of a web app.
+
+\section{Issie's UI} \label{sec:IssieUI}
+\subsection{Overview and Evaluation}
+In line with the core principles that state all features implemented in Issie should be \textbf{Obvious} and \textbf{Intuitive}, Issie's UI aims to be consistent and straightforward. Consistency in the UI helps constantly prove a user’s assumptions about the user interface right, creating a sense of control, familiarity, and reliability \cite{uiconsistency}. It also plays a crucial role in exposing all of the features of an application to the user - this is because features which are accessed in an inconsistent manner may be missed or incorrectly understood by end users. Similarly, a straightforward UI intuitively guides users towards functionality provided by an application. A consistent and straightforward UI means that students using Issie spend less time learning how to use it compared to other similar applications - at it's launch most students were able to get started within five minutes \cite{marco_diss}. With the limited amount of time in labs available, less time spent learning to use tools means more time spent on learning educational content.
+
+Since it's original release, more features have been added to Issie, such as the Waveform Simulator, with the UI being updated to accommodate these features. At the time of writing, the latest release version of Issie is version 2.4.0, released on 31st October 2021. Images of Issie's UI can be found in Appendix A. On launch, Issie gives the user the option to create a new project or open an existing one. A project consists of one \textbf{main} sheet, and any number of sub-sheets, which define reusable custom components. Figure \ref{fig:IssieSheetAnnotated} is an annotated screenshot of a sheet open in Issie. The UI can be split into the following sections, which are highlighted in different colours on Figure \ref{fig:IssieSheetAnnotated}.
+
+\begin{itemize}
+    \item[] \textbf{Traditional Menu Bar (Red):} The traditional menu bar, consists of the "Edit" and "View" menus. It is not used to expose Issie's core features - instead it is used to let the user do basic operations, such as zooming, copying and pasting etc. Many of these functions are duplicated through keyboard shortcuts or through the buttons in the bottom left of the sheet (undo, redo, copy, paste).
+    \item[] \textbf{The Canvas:} The canvas is the central focus of the application - it is where the schematic is designed. Components are dragged onto the canvas, with red-dashed lines appearing to show when a component is aligned with a grid line. Components and connections on the canvas can be interacted with in many ways, such as hovering, clicking to select, and dragging to move.
+    \item[] \textbf{Right Tabs Panel (Green):} The panel on the right-hand side of the application provides the user with ways of (i) affecting the state of the canvas and (ii) gaining insight into the schematic itself. There are three tabs: the \textbf{Catalogue}, which lets users add new components to the canvas (users can hover on components for details); \textbf{Properties}, which lets users view and modify component properties like name and width, and \textbf{Simulation}, which opens the Step Simulator, giving users the option to start a simulation. Due to the Step Simulator requiring more display real-estate, the right panel widens when the Simulator tab is selected.
+    \item[] \textbf{Top Bar (Blue):} In the fist release of Issie, the white bar located at the top of the  application contained controls to, (i) save the current sheet, (ii) Switch to another sheet in the open project, and (iii) Open another or create a new project. The filepath of the current project and sheet are also displayed. All of these elements were consistent - with the focus on interacting with files. A slight grievance with the "Project" and "Sheets" dropdown menus is that they are not closed by clicking elsewhere in the application, only by clicking on the menu again. Since then, an "Info" button has been added featuring information about Issie and a short user guide. While this is not necessarily consistent with the other elements in its vicinity, the top bar enables the "Info" button to have maximum visibility, something which a student requiring information may appreciate. One very inconsistent part of the UI is how the Waveform simulator is accessed. While most actions which analyse the schematic (e.g. Step Simulator) are accessed via the Right Tabs panel, the Waveform simulator is opened through a button on the top bar. This causes previously unseen "WaveSim" tab to spawn in the right panel, and the panel boundary becoming draggable. The user can select the waveforms to view (Figure \ref{fig:IssieWSSel}), and then view the waveforms (\ref{fig:IssieWS}. The Waveform simulator's behaviour is inconsistent with that of the Step simulator:
+    \begin{itemize}
+        \item Step Simulator displayed in a wider, fixed-width panel. Waveform Simulator displayed with panel starting at regular width, but the panel can be manually resized by dragging.
+        \item The user can start a simulation in the Simulation tab, and still interact with other tabs. This is not the case for the Waveform simulator, which locks the user in the WaveSim tab.
+        \item Step Simulation started and ended with the same button, with a clear indication of how to end the simulation. There is no end/close button on the WaveSim tab when waveforms are being viewed. Instead, the user must press the "Edit List" button, which takes them back to the selection menu wherer there is a close button. This is very unintuitive.
+    \end{itemize}
+    \item[] \textbf{Buttons on bottom-left (Yellow):} Undo, Redo, Copy, and Paste buttons. These are four common functions, and therefore it makes sense to have obvious and fast ways to access them. Useful to get started if the user is not familiar with keyboard shortcuts.
+\end{itemize}
+
+\subsection{Considerations when adding new features}
+As discussed in the previous section, Issie's UI at time of launch was very intuitive and straightforward. However, when there are fewer features it is easier to condense the interfaces for them into a well structured and streamlined UI. The inconsistencies of the Waveform Simulator tell a cautionary tale of how new features can introduce impurities into an application's GUI. This project aims to add a whole new way of visualising logic (truth tables) to Issie, and given the saturated nature of the current UI, some redesigning may be necessary to accommodate all features.
+
+\section{Effects of Application Performance on Users} \label{sec:perfeffects}
+Interactivity is a key part of Issie, and one of the major contributors to perceived interactivity is the perceived responsiveness of an application \cite{interactiveWu}, which itself is often tied to application performance. Perceived responsiveness is relevant in systems where a user's "perceived control over the interaction process reflects their ability or confidence in performing related activities". Combining these findings with the cognitive theory of self-efficacy, which proposes that academic performance is linked to perceived ability, indicates that perceived responsiveness is an important factor to consider when building an educational application. Robert Miller \cite{Miller1968ResponseTI} describes three classes of perceived responsiveness based on a computer's response time:
+\begin{itemize}
+    \item $\leq 100ms$: Perceived as instantaneous.
+    \item $\leq 1s$: Noticeable but does not lose the user's attention.
+    \item $\geq 10s$: Loses the user's attention.
+\end{itemize}
+
+Ideally, every interaction would be in the first class, however naturally certain tasks will take longer than others. In his paper, Miller investigates specific "Topics": examples of human-computer interaction, and examines the acceptable response time. A \textit{"Response to complex inquiry in tabular form"} (Topic 9) has a preferred maximum delay of 2 seconds; this is particularly relevant to this project as it resembles the operation of calculating and presenting a Truth Table to the user. Therefore, it could be suggested that in order for the added Truth Table generation feature to have the maximum positive effect, generation should take less than two seconds.
+As mentioned in subsection \ref{subsec:educating_engineers}, engineers tend to be kinesthetic learners and therefore are likely to prefer tools which let them interactively experiment with what they are learning. Therefore, it can be proposed that increasing the responsiveness of Issie (which increases perceived interactivity), will lead to a better learning experience.
+
+
+\section{Agile Software Development}
+Agile software development \cite{alma9955899676101591} is an iterative approach to software development, prioritising an "agile" response to changing requirements and user feedback. In Scrum, a popular Agile framework, the development team's plan is split into short \textit{sprints} 1-4 week periods of work which deliver some "product", which is fully usable in its own right \cite{mepCW}. The high-level descriptions of the work are organised in a structured list called the \textit{backlog}. The hierarchy in the backlog is as follows \cite{backlog}:
+\begin{itemize}
+    \item \textbf{User Story:} Is a short, basic task which should not take too long to complete. An example would be a task to move the waveform simulator to the right tab, next to the step simulator.
+    \item \textbf{Epic:} A large body of work which consists of multiple user stories. An example of an epic would be to implement truth table generation for a user-selection of components.
+    \item \textbf{Initiative:} Represent overarching goals of the software development project, consisting of multiple epics.
+\end{itemize}
+
+Over successive sprints, the number of stories in the backlog should reduce. There are regular meetings with the product owners, during which the development team \footnote{Usually there is an intermediary (Scrum Master) managing the organisation of the development team, but given that this project is completed alone this is an unnecessary role.} receives feedback which can then be acted upon. This may often add more work to the backlog. This cycle of continuous development aims to deliver working products which match user requirements on a frequent basis.
+A survey \cite{CHOW2008961} of software projects managed in an Agile fashion found that "The practice of agile software engineering techniques"is a critical success factor that contributes to the successful agile software development projects in terms of Quality and Scope". This is also reflected by industry, where Agile approaches to software development have succeeded where more traditional linear Waterfall-esque approaches have failed \cite{mepCW}.
+
+In the context of this project, the "product owner" is Dr Thomas Clarke, who oversees the overall development of Issie, while the "development team" consists of the author alone.
