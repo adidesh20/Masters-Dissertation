@@ -2,7 +2,7 @@
 % This section describes all the changes and additions made to Issie by this project. In subsequent sections in this chapter, the rationale behind these changes, including analysis of high-level methods, will be explained. Finally, in the Implementation chapter, the details of how these features were implemented will be explained. 
 
 \section{Top Level UI Changes}
-The top-level UI of the application has been changed to accommodate truth tables. As a result of this, the way the waveform simulator is accessed has been changed as well. In prior versions of Issie, the right tab section had three options: \textbf{Catalogue} for adding new components, \textbf{Properties} for changing component properties, and \textbf{Simulation} for launching the Step Simulator. When applicable, Waveform Simulator could be accessed by clicking a button in the top bar, which would temporarily create an extra tab in the right section. Given that most interactions related to modifying or gaining insight into the schematic were done through the right section tabs, the decision was made for the truth table to be displayed there. The large amount of space needed to display a truth table, as well as related features, warranted a separate tab for truth tables. However, this approach posed some potential problems. During the earlier evaluation of Issie, it was found that the method of accessing the waveform simulator was inconsistent, and that the waveform simulator should ideally have it's own permanent tab too. Therefore, the total number of tabs would increase from three to five, resulting in a cramped layout. 
+The top-level UI of the application has been changed to accommodate truth tables. As a result of this, the way the waveform simulator is accessed has been changed as well. In prior versions of Issie, the right tab section had three options: \textbf{Catalogue} for adding new components, \textbf{Properties} for changing component properties, and \textbf{Simulation} for launching the Step Simulator. When applicable, Waveform Simulator could be accessed by clicking a button in the top bar, which would temporarily create an extra tab in the right section. Given that most interactions related to modifying or gaining insight into the schematic were done through the right section tabs, the decision was made for the truth table to be displayed there. The large amount of space needed to display a truth tables and related functionality warranted a separate tab for truth tables. However, this approach posed some potential problems. During the earlier evaluation of Issie, it was found that the method of accessing the waveform simulator was inconsistent, and that the waveform simulator should ideally have it's own permanent tab too. Therefore, the total number of tabs would increase from three to five, resulting in a cramped layout. 
 The updated version of Issie delivered by this project solved this problem by grouping all circuit simulation activity under one tab. The third tab in the right section has been re-named to \textbf{Simulations} and features three further sub-tabs, each for the Step Simulator, Truth Table generator, and Waveform Simulator respectively. This can be seen in Figure \ref{fig:issieview}, where the \textbf{Truth Table} sub-tab is open. 
 From this tab, the user can choose to generate a truth table for the whole sheet. Additionally, if a correct configuration of components is selected, a second option to generate a truth table for the selected configuration is also shown to the user. As with the Waveform Simulator, when the Truth Table tab is open, the dividerbar can be dragged to resize the right section. Previously, there was a bug where, if the right section was scrollable, the dividerbar height did not dynamically resize. This bug was fixed by this project.
 \begin{figure}[h]
@@ -13,7 +13,7 @@ From this tab, the user can choose to generate a truth table for the whole sheet
 \end{figure}
 
 \section{Generating Numeric Truth Tables}
-The user can generate a truth table by clicking on the \textit{Generate Truth Table} button. Akin to the Step Simulator, this button provides feedback on the correctness of the canvas to the user through colours. A green button indicates a correct canvas which can be used to generate a truth table. If there are issues with the schematic, the button will instead be yellow, and clicking it will inform the user of the nature of the error. Finally, the button can also be a faded green; this indicates that while the schematic is correct, it is unsuitable for truth table generation as it contains sequential logic. This is done to maintain consistency with the Waveform Simulator button, which becomes faded when there are no sequential components.
+The user can generate a truth table by clicking on the \textit{Generate Truth Table} button. Like the  \textit{Star Simulation} button in the Step Simulator, this button provides feedback on the correctness of the canvas to the user through colours. A green button indicates a correct canvas which can be used to generate a truth table. If there are issues with the schematic, the button will instead be yellow, and clicking it will inform the user of the nature of the error. Finally, the button can also be a faded green; this indicates that while the schematic is correct, it is unsuitable for truth table generation as it contains sequential logic. This is done to maintain consistency with the Waveform Simulator button, which becomes faded when there are no sequential components.
 
 When the user generates a truth table, a numeric truth table is generated at first. Due to performance reasons, which will be discussed later, Issie will only generate up to the first 1024 rows in a truth table. In cases where the truth table should have been larger than this limit, it is considered \textit{truncated}. The user is warned of this through a yellow coloured popup with the following message: \textit{"The Truth Table has been truncated to 1024 input combinations. Not all rows may be shown. Please use more restrictive input constraints to avoid truncation"}. Once a truth table is generated, the user can interact with it in numerous ways through the user interface, transforming and regenerating it as necessary. Figure \ref{fig:tttab} shows two views of the Truth Table tab, which contains a menu with collapsible sections. The compact view (Figure \ref{fig:compact}) is the default, with all sections other than the one displaying the truth table, reduction operations, and base selector being collapsed. The other sections can be expanded to reveal additional functionality; Figure \ref{fig:expand} shows the view of the Truth Table tab when all sections are expanded. The tab section is also scrollable.
 
@@ -37,7 +37,7 @@ Figure \ref{fig:ttGen} shows a high-level overview of the truth table generation
         \label{fig:tttab}
 \end{figure}
 
-\subsection{Decision to use the Step Simulator}
+\subsection{Decision to re-use Step Simulation Code}
 At its core, generating a complete numeric truth table is a brute-force process. Each possible combination of input values must be simulated to calculate the corresponding output values, and the relationship should be recorded in the table. 
 Given that Issie already features a performant and reliable simulator (step simulator) for calculating the outputs of combinational logic, the decision was made to use as much of its implementation as possible. This approach has many advantages:
 \begin{itemize}
@@ -95,10 +95,6 @@ Once added, the constraint will appear as a small tag in the Filter section -- t
     \item For inequality constraints, the upper bound must be greater than the lower bound. This check is always performed using the unsigned representation of the number entered.
 \end{enumerate}
 
-
-
-
-
 \begin{figure}[h]
      \centering
      \begin{subfigure}[b]{0.4\textwidth}
@@ -153,5 +149,24 @@ The advantage of the first approach was that Requirement \textbf{D1.1.1} would b
 With all points considered, algebraic simulation was chosen over analysing the schematic. The Fast Simulator has been augmented so that it can receive both numeric and algebraic values as inputs to a simulation. It will then return outputs as functions of the algebraic inputs.
 
 \subsection{Algebraic Operators}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+        Operator Name & Symbol & Explanation \\ \hline
+        Numeric Addition & + & Binary operator which represents mathematical addition of its two operands. \\ \hline
+        Numeric Subtraction & - & Binary operator which represents mathematical subtraction of its right operand from its left operand. \\ \hline
+        Bitwise And & \& & Binary bitwise And operator for which works with both single and multi-bit outputs. \\ \hline
+        Bitwise Or & | & Binary bitwise Or operator for which works with both single and multi-bit outputs. \\ \hline
+        Bitwise Xor & ⊕ & Binary bitwise Xor operator for which works with both single and multi-bit outputs. \\ \hline
+        Numeric Negation & - & Unary negation operator, indicates that the single operand will have its sign inverted \\ \hline
+        Bitwise Not & \~ & Unary bitwise Not operator, indicates that all bits of the single operand will be inverted \\ \hline
+        Carry Of & carry() & Unary operator which signifies that the result is the single-bit carry-out from an arithmetic expression. This expression is the operand, which is situated in the parentheses. \\ \hline
+        Bit Range & A[u:l] & Unary operator with two parameters: an upper and lower bound. Indicates that a specified range of bits (inclusive) will be selected from the operand. \\ \hline
+        Equals & == & Logical operator which checks for equivalence between some algebraic expression and a numeric value. \\ \hline
+        Append & A::B & Binary operator which joins the bits of the two input operands into one result whose width is the sum of the input widths. The left operand bits become the MSBs, right operand bits become LSBs. \\ \hline
+    \end{tabular}
+\end{table}
 
 \section{Viewing the Truth Table} \label{sec:ttView}
