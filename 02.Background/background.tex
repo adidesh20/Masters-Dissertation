@@ -2,7 +2,7 @@
 
 \section{Pedagogical Considerations} \label{sec:ped_cons}
 Given  the the overall project aim of making it easier for students to understand the use of logic in digital design, any features added to Issie must enhance the learning experience of its users. Many decisions related to the project, such as which features to add, the UI/UX design, and the level of interactivity will all be made through the lens of pedagogy.
-\subsection{Memory Models}
+\subsection{Memory Models} \label{subsec:memmodels}
 One of the key facets of learning is the long-term retention of key concepts and relationships. The Atkinson-Shiffrin multi-store model \cite{memory_model} provides a good framework for modelling the workings of human memory, and many task-specific models, theories, and techniques have been derived from it. The aim of any effective learning application should be to convey and revisit information in such a way that it succeeds in reaching the Long Term Memory store.
 
 \begin{figure} [h]
@@ -44,7 +44,7 @@ While the operations performed are clear, it may not be very clear on first insp
 \subsection{Visualising Logic with Schematic Diagrams}
 Schematic diagrams give the hardware representation of the combinational logic, and are the primary way of creating and visualising combinational logic in Issie. At their simplest, they consist purely of logic gates; these gates each correspond to a Boolean operator. However, in practice (and Issie) schematics are at a slightly higher-level, with certain combinational components (which can be built from gates) pre-created for the user. For example, Equation \ref{equ:MuxEq} represents a 2-bit Multiplexer, which is a component available in Issie's catalogue. The recall of stored knowledge due to the visual stimulus of the multiplexer component on the diagram is much more likely compared to the semantic stimulus of the Boolean expression. However, as a schematic increases in size, the number of components may become so large that holding all of the visual stimuli in short-term memory is unfeasible. Issie combats this by letting users modularise their schematic through hierarchical custom components. Alongside decreasing schematic size and repeated logic, this feature actually aims to teach students the technique of modularising their work (whether that is a schematic or code), and its advantages. These advantages \cite{arm_modular} include efficient development, easier dubugging, and logic reuse. However, as mentioned in the Project Motivation, hierarchical components are not always effective (particularly if badly named and organised), leaving a opportunity for improvement through complementary visualisation techniques. 
 
-\subsection{Truth Tables} \label{subsec:TruthTables}
+\section{Truth Tables} \label{subsec:TruthTables}
 A truth table represents a given combinational logic function; featuring all input combinations on the left, and their corresponding output(s) on the right. As the truth table maps all possible inputs to their output, it is trivial to look up the behaviour of the logic in a given scenario. A very basic example is the truth table for the Boolean \textbf{AND} operator, shown in Table \ref{tab:And_TT}.
 
 \begin{table}[h!]
@@ -61,19 +61,31 @@ A truth table represents a given combinational logic function; featuring all inp
     \label{tab:And_TT}
 \end{table}
 
-Given that a truth table defines some logic using an exhaustive set of examples, it could be said that truth tables is ideal for kinesthetic learners. This exhaustive property can also be used to test for logical equivalence. Suppose the claim is made that two schematics, with one schematic featuring far fewer components than the other, are logically identical. Equivalence could be confirmed by simply checking if the truth tables for the two schematics are the same. 
+Given that a truth table defines some logic using an exhaustive set of examples, it could be said that truth tables are ideal for kinesthetic learners. This exhaustive property can also be used to test for logical equivalence. Suppose the claim is made that two schematics, with one schematic featuring far fewer components than the other, are logically identical. Equivalence could be confirmed by simply checking if the truth tables for the two schematics are the same. 
 
-However, a disadvantage of using truth tables to visualise combinational logic is that they can very rapidly grow in size. For logic with $n$ inputs, the number of rows in the associated truth table is $2^n -1$. Thus, Issie schematics with a large number of inputs would result in very long truth tables, which would likely intimidate the user. The size of generated truth tables could be reduced by filtering them based on user selections, or through truth table reduction methods.   
+However, a disadvantage of using truth tables to visualise combinational logic is that they can very rapidly grow in size. For logic with $n$ single-bit inputs, the number of rows in the associated truth table is $2^n -1$. For multi-bit inputs this number would grow even larger. Thus, Issie schematics with a large number of inputs would result in very long truth tables, which would likely intimidate the user. The size of generated truth tables could be reduced by filtering them based on user selections, or through truth table reduction methods.   
 
-\subsubsection{Reduction using Don't Cares}
-A "Don't Care" term in a truth table can mean different things based on it's positioning. It is more commonly seen on the right-hand side of a truth table, signifying that an output for a given input combination is invalid or has no use \cite{1969logic}. This information is often used when attempting to simplify Boolean expressions using Karnaugh maps. On the other hand, a Don't Care term in an input row signifies that the particular input has no effect on the eventual output of the logic for that combination. An example of this can be seen in the standard Truth Table for a 2-bit Multiplexer, found in Figure \ref{subfig:muxTT_standard}. The first and third row both have an output value of 0, with the only difference being the change in the value of $B$. Given that $B$ can only take two values, this shows that when $A=0$ and $S=0$, the value of $B$ does not affect the output - therefore we "don't care" about B. Rows one and three can therefore be collapsed into one row, with the entry for the $B$ column being replaced with an "X". This process can be repeated until all such row combinations have been collapsed. The results from this process can be seen in Table \ref{subfig:muxTT_dc}. The length of the truth table has been reduced by 25\%, and the actual semantic function of what the multiplexer does is much clearer as well.
+\subsection{Reduction using Don't Cares} \label{subsec:dcbackground}
+A "Don't Care" term in a truth table can mean different things based on it's positioning. It is more commonly seen on the right-hand side of a truth table, signifying that an output for a given input combination is invalid or has no use \cite{1969logic}. This information is often used when attempting to simplify Boolean expressions using Karnaugh maps. On the other hand, a Don't Care term in an input row signifies that the particular input has no effect on the eventual output of the logic for that combination. These \textit{Don't Care inputs} can be found through logic minimisation, of which there are numerous techniques ranging from the aforementioned Karnaugh Maps \cite{kmapbook} to heuristic-based tools like Espresso \cite{espresso}. The latter is very effective at reducing large circuits efficiently, and would therefore appear to fit the needs of the project well. An example of the reduction can be seen in Table \ref{tab:muxTTs}, where the eight row exhaustive truth table (\ref{subfig:muxTT_standard}) is reduced to two rows (\ref{subfig:muxTT_dc}). However, Espresso and other common minimisation techniques treat their inputs and outputs as single-bit Boolean values which are either \codestyle{ON}, \codestyle{OFF}, or \codestyle{DC} -- corresponding to 1, 0 and Don't Care \cite{espressoinputs}. Multi-bit IOs are broken into their constituent bits. In Table \ref{subfig:muxTT_dc}, only HIGH outputs are shown -- this works when it can be assumed that all other input combinations yield 0. This approach aligns well with industrial applications, where signals on wires can only be HIGH or LOW, and there is value in reducing to the form which requires the fewest gates.  On the other hand, Issie is an educational application where inputs and outputs can have more than two values, and focus is more on semantics and understanding rather than the most cost-efficient hardware design. Therefore, such minimisation would not integrate well with Issie's existing implementation of multi-bit IOs.
 
-\subsubsection{Algebraic Truth Tables}
-While reduction with Don't Cares is useful, it still does not convey what the multiplexer does in the most concise manner. Table \ref{subfig:muxTT_alg} shows a truth table which has been heavily reduced and provides the most clear insight into what the multiplexer does - $A$ is propagated to the output when the selection input ($S$) is low, and $B$ is propagated when $S$ is high. Having functionality which could create similar tables for user-created schematics would be highly useful.
+In order to implement DC reduction in Issie, a suitable algorithm will have to be written which supports multi-bit inputs. One possibility may be analysis of redundancies in the existing truth table. For example, in the full truth table, the first and third row both have an output value of 0, with the only difference being the change in the value of $B$. Given that $B$ can only take two values, this shows that when $A=0$ and $S=0$, the value of $B$ does not affect the output - therefore we "don't care" about B. Rows one and three can therefore be collapsed into one row, with the entry for the $B$ column being replaced with an "X". This process can be repeated until all such row combinations have been collapsed. The results from this process can be seen in Table \ref{subfig:muxTT_dc_zeros}. The length of the truth table has been reduced by 25\%, and the actual semantic function of what the multiplexer does is much clearer as well. This table is however, much larger than the reduced table generated by Espresso, indicating that it may not work well with larger schematics.
+
+\subsection{Algebraic Truth Tables}
+While reduction with Don't Cares is useful, neither implementation of it is ideal. Industry-style minimisation doesn't fully align with Issie's implementation, while custom algorithms may not be reduce the table enough. Additionally, Don't Care reduction cannot simplify relationships which involve all inputs, such as arithmetic. A viable alternative is an Algebraic Truth Table; these are often found on component datasheets \cite{timux} and have the task of summarising the behaviour of the circuit in a concise and readable format.  One such example is shown in Figure \ref{fig:datasheet}, which is an excerpt from a datasheet for a three-input multiplexer. H and L are equivalent to 1 and 0, but the terms of form $I_x$ in the table are algebraic values representing inputs. The select signals ($S2,S1,S0$), which actually control the circuit behaviour are still numeric.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{02.Background/datasheet.png}
+    \caption{Algebraic Truth Table in Datasheet for a Three-input Multiplexer \cite{timux}}
+    \label{fig:datasheet}
+\end{figure}
+
+Table \ref{subfig:muxTT_alg} shows what the corresponding algebraic truth table would look like for the running example in this section.
+$A$ is propagated to the output when the selection input ($S$) is low, and $B$ is propagated when $S$ is high. This clearly describes a two-input multiplexer. Having functionality which could create similar tables for user-created schematics, with support for more complex algebraic operators would likely be useful. This is because algebraic truth tables carry far more semantic information in a much smaller visual space, meaning that a students' sensory register is less likely to be overloaded.
 
 \begin{table}[h]
     \centering
-    \subfloat[Standard Truth Table]{
+    \subfloat[Full Truth Table]{
     \label{subfig:muxTT_standard}
     \begin{tabular}{c|c|c||c}
      \textbf{A} & \textbf{B} & \textbf{S} & \textbf{OUT} \\
@@ -88,8 +100,8 @@ While reduction with Don't Cares is useful, it still does not convey what the mu
      1 & 1 & 1 & 1\\
     \end{tabular}}
     \medskip
-    \subfloat[Reduced with DC]{
-    \label{subfig:muxTT_dc}
+    \subfloat[DC Reduced \\(Inc. Zeros)]{
+    \label{subfig:muxTT_dc_zeros}
     \begin{tabular}{c|c|c||c}
      \textbf{A} & \textbf{B} & \textbf{S} & \textbf{OUT} \\
      \hline
@@ -99,6 +111,15 @@ While reduction with Don't Cares is useful, it still does not convey what the mu
      1 & X & 0 & 1\\
      0 & 0 & X & 0 \\
      1 & 1 & X & 1
+    \end{tabular}}
+    \medskip
+    \subfloat[DC Reduced \\(Espresso)]{
+    \label{subfig:muxTT_dc}
+    \begin{tabular}{c|c|c||c}
+     \textbf{A} & \textbf{B} & \textbf{S} & \textbf{OUT} \\
+     \hline
+     1 & X & 0 & 1 \\
+     X & 1 & 1 & 1
     \end{tabular}}
     \medskip
     \subfloat[Algebraic Truth Table]{

@@ -3,9 +3,9 @@
 \subsection*{Essential Requirements}
 The improved version of Issie delivered by this project must be able to:
 \begin{itemize}
-    \item[\textbf{E1.1}] Analyse a schematic containing \textbf{only combinational logic} and display a standard truth table for that sheet.
+    \item[\textbf{E1.1}] Analyse a schematic containing \textbf{only combinational logic} and display a standard numeric truth table for that sheet.
     \medskip
-    \item[\textbf{E1.2}] Analyse part of a schematic selected by the user containing \textbf{only combinational logic} and display a standard truth table for that selection.
+    \item[\textbf{E1.2}] Analyse part of a schematic selected by the user containing \textbf{only combinational logic} and display a standard numeric truth table for that selection.
     \begin{itemize}
         \item[\textbf{E1.2.1}] New inputs and/or outputs should be created temporarily (if necessary) to feed inputs and/or read outputs from the selected logic.
         \item[\textbf{E1.2.2}] It must be clear which newly generated inputs/outputs shown in the truth table correspond to inputs/outputs into the selected logic.
@@ -23,17 +23,24 @@ The improved version of Issie delivered by this project must be able to:
     \item[\textbf{E1.5}] Give users the option to filter the truth table by fixing input or output values.
     \medskip
     \item[\textbf{\textbf{E1.6}}] Truth Tables must be displayed in a clear and easy to understand format, and features involving truth tables (e.g. filtering, reducing etc.) must be presented in an intuitive way.
-    \item[\textbf{E1.7}] Use the above features to give users a clearer insight into the digital logic on the schematic, or to further reinforce their existing understanding.
+    \item[\textbf{\textbf{E1.7}}] Truth Table generation and reduction must take no longer than 4 seconds.
+    \item[\textbf{\textbf{E1.8}}] Graphical manipulation operations on the Truth Table, such as re-ordering rows, sorting etc. should appear instantaneous (i.e. take less than 100ms).
+    \item[\textbf{E1.9}] Use the above features to give users a clearer insight into the digital logic on the schematic, or to further reinforce their existing understanding.
 \end{itemize}
 
 \subsection*{Desirable Features}
 \begin{itemize}
-    \item[\textbf{D1.1}] Generate and display algebraic truth tables when possible (e.g. multiplexer and adder circuits).
+    \item[\textbf{D1.1}] Generate and display algebraic truth tables.
+    \begin{itemize}
+        \item[\textbf{D1.1.1}] At minimum should at least support multiplexer and adder circuits.
+        \item[\textbf{D1.1.2}] Preferably should have a rich set of algebraic operators with support for most circuits.
+    \end{itemize}
     \medskip
     \item[\textbf{D1.2}] Provide an interactive truth table interface.
     \begin{itemize}
         \item[\textbf{D1.2.1}] Mousing over parts of the truth table could have effects on the schematic (e.g. annotations or highlighting).
         \item[\textbf{D1.2.2}] Users can rearrange order of columns/rows in the truth table.
+        \item[\textbf{D1.2.3}] Users can sort the truth table in ascending and descending order.
     \end{itemize}
     \medskip
     \item[\textbf{D1.3}] Let the user access truth table related functionality without going through numerous steps \textbf{while} also keeping the number of buttons on the screen to a minimum to avoid cluttering the interface. 
