@@ -1,32 +1,9 @@
 \chapter{Implementation}
 
-\section{Generation of Truth Tables}
-Initially within the \textit{Truth Table} tab, the user has the option to generate truth tables for the whole sheet and, if applicable, for the selected components in the sheet. The initial generated truth table is numeric; users may subsequently manipulate or reduce the truth table using the various methods offered.
-\subsection{Initial Idea for Generating Truth Tables}
-\emph{Associated Requirements:} \textbf{E1.1}, \textbf{E1.3}, \textbf{E1.6}
+\section{Overview of Data Types}
+Various new F\fsharp types have been introduced to Issie by this project. This section describes these types and provides context to them, explaining their function and the rationale behind their creation.
 
-This sub-section describes the initial logic behind the generation of truth tables in Issie, as well as discussing its flaws and the reasons for changing it. The final version of the truth table generation algorithm, which will be discussed in subsequent sub-sections, is an augmented version of this initial algorithm. Therefore, there is merit in explaining it.
-
-% At its core, generating a complete numeric truth table is a brute-force process. Each possible combination of input values must be simulated to calculate the corresponding output values, and the relationship should be recorded in the table. 
-% Given that Issie already features a performant and reliable simulator (step simulator) for calculating the outputs of combinational logic, the decision was made to use as much of its implementation as possible. This approach has many advantages:
-% \begin{itemize}
-%     \item The existing step simulator has been extensively tested by end-users, meaning that its implementation is most likely bug-free. By using it, it will reduce the chance of the new feature introducing new bugs.
-%     \item In most cases, reusing existing code is much faster than writing new code from scratch. Not only is time saved on writing new code, but the amount of time spent debugging is also reduced.
-%     \item Reusing existing code will help keep the overall size of the codebase small. Not only does this help future programmers who work on the project by reducing how much they have to understand, but it also means that any future improvements made to the simulation code are also improvements to Truth Table generation.
-% \end{itemize}
-
-% \subsubsection{Existing Step Simulation Logic}
-% Figure \ref{fig:flowchartSim} provides an overview of Issie's process for building and running a Step Simulation. In this process, various checks must be performed; firstly the logic designed by the user must be verified to be syntactically correct, secondly the organisation of project files must be correct, and thirdly some Issie specific limitations (e.g. no cycles in combinational logic) must be enforced. Issie's simulation building process can be said to have three levels, with each level having an associated data structure which represents schematic. These data structures are: the \textbf{Canvas State}, \textbf{Simulation Data/Error}, and a \textbf{Fast Simulation}. A set of checks are performed at each level, and only upon passing these checks can a schematic be transformed to the subsequent data structure.
-% If any of these checks fail due to an issue with the user's schematic, the simulation building process returns a \textit{SimulationError}, which tells the user what the error is and which components/connections are affected. A key takeaway from Figure \ref{fig:flowchartSim} is that the process of building a simulation is separate to the process of running it. During the \codestyle{FastSimulation} building process, the schematic is analysed, with components being placed into an appropriate order for combinational reduction. However, as the \codestyle{FastSimulation} data structure is mutable, the values of each input can be updated without having to rebuild the whole simulation. Therefore, the time taken simulating a different input combination is quite short, as only the reduction function has to be re-run to find the new outputs. 
-% This distinction between building a simulation and running it with different input values makes the existing Step Simulator an optimal choice for use in truth table generation, which will need to simulate multiple input combinations as fast as possible. 
-
-% \begin{figure}
-%     \centering
-%     \includegraphics[width=\textwidth]{05.ImpPlan/IssieSim.pdf}
-%     \caption{An overview of Issie's Step Simulation}
-%     \label{fig:flowchartSim}
-% \end{figure}
-
+\subsection{Types for Representing Truth Tables}
 %%%%% Commands (variables) for type information %%%%%
 % Cell Table Data
 \newcommand{\ttCellData}{
@@ -53,42 +30,6 @@ This sub-section describes the initial logic behind the generation of truth tabl
     Record type containing various \codestyle{Map} data structures which map a row of inputs to a row of outputs. Different map data structures are used for caching different versions of the truth table. The record also contains fields and methods which contain or relay other metadata about the truth table.
 }
 
-\subsubsection{Exhaustively calculating LHS Combinations}
-In Issie, inputs to combinational logic can be multi-bit (width > 1), and propagate through the logic via multi-bit buses. Two possible approaches for handling these multi-bit inputs were considered. The first option was to split a multi-bit input into its constituent bits in the truth table; this aligns more closely with the actual hardware implementation of the logic \cite{muxtables}, where component ports only accept a single-bit signal. However, this is not user-friendly at all - for example a 32 bit bus would be split into 32 different inputs. This would massively increase the number of columns in the truth table, impacting the utility of the truth table as an aid. Furthermore, splitting inputs and outputs into separate bits would obscure certain relationships, such as those of an adder circuit. Instead, the decision was made to represent each multi-bit input/output as one column in the truth table, with a hexadecimal representation of the value by default. Similarly to the Step Simulator, the user can change the representation to decimal or binary after the fact. 
-
-For a truth table with $n$ inputs ($x_1 .. x_n$), each of width $w$, ($w_1 .. w_n$), the number of rows in the truth table is given by the sum of all widths raised to the power of 2, as shown in Equation \ref{equ:rowcount}. For example, a schematic with three inputs, with widths: $w_1 = 1, w_2 = 2, w_3 = 3$ would result in a truth table with 64 rows. This sum-of-widths formula is derived from the idea that if we define a set $S_i$ as the set of all possible input combinations for input $x_i$, the left-hand side of a truth table is the \textbf{Cartesian Product} of all sets from $S_1$ to $S_n$. This project defines the left-hand side of the truth table as the \textbf{input space} of the truth table, and the right-hand side as the corresponding \textbf{output space}.
-\begin{equation} \label{equ:rowcount}
-    \textrm{Row Count} = \prod_{i=1}^{n} 2^{w_i} = \prod_{i=1}^{n} S_i = 2^ {\left( \sum_{i=1}^{n} w_i \right)}
-\end{equation}
-For only two multi-bit inputs, the library function \codestyle{List.allPairs} \cite{ListFuns} can be used to find this Cartesian product, with each set of possible values being passed in as a List. However, no such library function exists for $n$ sets/lists. The function \codestyle{numbComb} was implemented to find the Cartesian product of $n$ lists. The function is tail recursive for improved performance.
-
-% \subsubsection{High-level view of the initial generation algorithm}
-% The initial Truth Table generation algorithm can be broken down into the following stages:
-% \begin{enumerate}
-%     \item Build Simulation Data using the same methods as the Step simulator.
-%     \item Ensure that all logic is combinational.
-%     \item Get all Simulation Inputs and Outputs from the Simulation Data.
-%     \item Calculate the Left-hand side of the Truth Table by finding all combinations of input values.
-%     \item For each input combination:
-%     \begin{enumerate}
-%         \item Feed input combination into the Fast Simulation.
-%         \item Extract outputs from the Fast Simulation.
-%         \item Record the input/output mapping in the Truth Table structure.
-%     \end{enumerate}
-% \end{enumerate}
-
-\subsubsection{Issues with the Initial Algorithm for Input Space Generation}
-% Initially, the generated truth tables were exhaustive, meaning that the mapping of every possible input combination to its output combination would be displayed. However, several issues arose with this approach, with the most crucial being that of performance. The complexity of finding the Cartesian product of multiple sets is an exponential function of the number of sets. For example, the complexity of finding the Cartesian product of $n$ sets, each of size $s$, would be $O(s^n)$. The size of each set is dependent on the width of the input; Issie does not limit input widths, meaning that the size of the sets may also be very large. For example, a single 16-bit input has 65536 unique values, and combining this with a second 16-bit input yields an input space of over 4 billion unique combinations. Simulating this large number of combinations and storing the result takes upwards of 20 seconds, violating essential requirement \textbf{E1.7}. Additionally, a sufficiently large input space could cause the system to run out of memory and crash, which is totally unacceptable. Along with the practical issues with the generation of the complete truth table, it can also be argued that a very large complete truth table is not useful to the user. According to the Atkinson-Shiffrin memory model described in Section \ref{subsec:memmodels}, external stimuli only stay in the sensory register for 0.5 seconds prior to decaying. A large number of rows is likely to overload the sensory register, meaning that it is likely that the information will not pass to short term memory unless the the user slows down and processes each row one-by-one. Even if this were the case, a truth table with a large number of rows would take over 30 seconds for the user to read and process. Given that short term memory decays in 30 seconds, this means that the user will likely have forgotten the first row by the time they finish reading the last one. 
-
-% In the original plan, the user would be able to decrease an existing large (exhaustive) truth table to a manageable size using two methods. The first way of doing this would be filtering the exhaustive table with input and output constraints, and the second way would be reduction through finding patterns in the exhaustive table (e.g. Don't Care reduction). However, due to the performance issues related to generating an exhaustive truth table, this approach could no longer be completely relied upon. Therefore, an alternative approach to generating the input space was required.
-
-\subsubsection{High-level view of Truth Table Generation}
-While the initially conceived algorithm for generating the input space required major changes, the other steps in the truth table generation process have remained largely unchanged since the original design process. Figure \ref{fig:ttGen} is a flowchart which shows the overall method for generating a truth table in Issie. This method, along with the improved input space generation algorithm, will be further elaborated on in the next section.
-
-
-\subsection{Truth Table Generation Algorithm}
-\emph{Associated Requirements:} \textbf{E1.1}, \textbf{E1.3}, \textbf{E1.6}
-
 \begin{table} [h!]
     \centering
     \begin{tabular}{| m{4cm} | m{10cm} |}
@@ -111,45 +52,30 @@ While the initially conceived algorithm for generating the input space required 
     \label{tab:tabledatastructs}
 \end{table} 
 
-Figure \ref{fig:ttGen} shows a high-level view of the method used to generate truth tables in Issie. The user initiates truth table creation by clicking on a button. Following this, 
+Truth tables in Issie are mostly stored as a mapping from input rows (each containing a single input combination) to output rows. This is implemented using the F\fsharp \codestyle{Map} type; therefore a truth table map has the type \codestyle{Map<TruthTableRow,TruthTableRow>}. The F\fsharp Map type implements immutable maps based on binary trees, which have a lookup time complexity of $O(log(n))$ \cite{fsmaps}. This is an improvement on traditional lists and arrays, which have a lookup time complexity of $O(n)$. Maps were chosen to store truth tables as it would be faster to look up an output row using a given input row.
+The \codestyle{TruthTable} data type is a record containing fields which store cached truth table representations, as well as other data. The fields of this record are described in Table \ref{tab:ttRecord}. Caching different versions of the truth table trades a slightly increased memory usage for time saving, as operations on the truth table do not need to be re-applied every cycle of the view function.
 
-As outlined in the previous section, the major hurdle to overcome during truth table generation was the immense size of the input space, as generating and mapping a large input space to its corresponding output space was deemed both inefficient and unnecessary. The final generation algorithm solves this issue by limiting the maximum size the input space can grow to. If the truth table has more input combinations than the limit allows, the truth table is \textbf{truncated}, and only the maximum number of allowed rows are shown. Following some trial-and-error testing, a maximum value of 1024 ($2^10$) rows was chosen. This would allow for small circuits to be wholly represented by the generated truth table, while still allowing for relatively fast truncated truth table generation for larger circuits. The issue with using truncation alone is that the generated truth table does not fully represent the logic. Therefore, users may not be able to find specific rows in the truth table, and conclusions drawn from the truth table may not always be accurate. As a result, the final generation algorithm reduces the input space by \textbf{first applying input constraints, and then truncating if necessary}. If a user generated truth table is truncated, they are warned and it is suggested that they apply more restrictive input constraints to view a specific subset of the truth table.
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|m{6cm}|m{8cm}|}
+    \hline
+        \textbf{Field and Type} & \textbf{Explanation} \\ \hline
+        \shortstack{TableMap: \\ \codestyle{Map<TruthTableRow,TruthTableRow>}} & The result of truth table generation. Contains the initially generated truth table with input constraints and algebraic inputs applied. \\ \hline
+        \shortstack{DCMap: \\ \codestyle{Map<TruthTableRow,TruthTableRow>}} & The result of performing Don't Care Reduction on TableMap. Is an Option type, so is none if the table has not been DC Reduced. \\ \hline
+        \shortstack{FilteredMap: \\ \codestyle{Map<TruthTableRow,TruthTableRow>}} & Cached result of filtering TableMap or DCMap with output constraints. \\ \hline
+        SortedListRep: \codestyle{TruthTableRow list} & The result of sorting the truth table stored in FilteredMap. The truth table is stored as an ordered list because Maps in F\fsharp are unordered. \\ \hline
+        IsTruncated: \codestyle{bool} & True if the truth table had to be truncated in the generation process. \\ \hline
+        MaxRowsWithConstraints: \codestyle{int} & The number of rows the truth table should have after applying input constraints, but prior to truncation. Used to calculate how many rows have been lost to truncation. \\ \hline
+        TableSimData: \codestyle{SimulationData} & Simulation used for the truth table, cached for use during table re-generation. \\ \hline
+        IOOrder: \codestyle{CellIO list} & List of all CellIOs in the truth table, in the order they originally were when the truth table was generated. \\ \hline
+        (member) Inputs: \codestyle{CellIO list} & Member function which returns a tist of all inputs in the truth table. \\ \hline
+    \end{tabular}
+    \caption{Explanation of \codestyle{TruthTable} Record fields}
+    \label{tab:ttRecord}
+\end{table}
 
-Table \ref{tab:tabledatastructs} shows a summary of the main data types and structures used to represent a truth table in Issie. These are in a hierarchy and are used across Issie. In addition to these data structures, a specific record type, the \codestyle{TableInput} is used in the process of determining the limited input space. Listing \ref{lst:tableinput} shows the type definition of the \codestyle{TableInput} type, with F\fsharp comments explaining each field in the record.
-
-\begin{lstlisting}[caption=Definition of TableInput type, frame=tb, language=FSharp, label=lst:tableinput]
-type TableInput = {
-    // SimulationIO associated with the input
-    IO: SimulationIO
-    // Is the Input algebraic (or numeric)
-    IsAlgebra: bool
-    // Number of possible unique input values, based on width of input
-    MaxRowCount: int
-    // Number of possible unique input values after applying input constraints
-    ConstrainedRowCount: int
-    // Number of possible unique input values that will fit in the Truth Table after truncation
-    AllowedRowCount: int
-    // Constraints on the input
-    Constraints: ConstraintSet
-}
-\end{lstlisting}
-
-The term \textit{Row Count} in this context refers to the size of the set ($S_i$) of unique values an input ($x_i$) can contribute to a table. The more formal definitions of the \textit{Row Count} fields are:
-\begin{enumerate}
-    \item \codestyle{MaxRowCount}: The total size of the Set $S_i$, which is equal to $2^{w_i}$, where $w_i$ is the width of the input.
-    \item \codestyle{ConstrainedRowCount}: The size of the subset of $S_i$ which contains all input values which conform with the input constraints. For example, if there were the following constraints on the input: $0 \leq x \leq 6$ \& $x = 9$, the Constrained Row Count would be 8. Constrained Row Count is always less than or equal to Max Row Count.
-    \item \codestyle{AllowedRowCount}: The number of input values the given input is actually allowed to contribute to the truth table. Ideally, this is equal to the Constrained Row Count, but in situations where the truth table has to be truncated, the Allowed Row Count may be limited to keep the total number of rows in the truth table under the overall limit.
-\end{enumerate}
-
-\subsubsection{Algorithm for generating the Input Space}
-
-
-\subsection{Numerical Constraints}
-\emph{Associated Requirements:} \textbf{E1.5}
-
-As per the requirements, users should have a way of filtering the truth table by applying numerical constraints to table inputs and outputs. This is necessary to reduce the size of the table and allow users to analyse relationships between inputs and outputs for a subset of the input space. 
-
-This project adds two types of numerical constraints; equality constraints and inequality constraints, the type definitions for which can be seen in Listings \ref{lst:equalitycon} and \ref{lst:inequalitycon}. Equality constraints on an input or output are of the form $IO = value$, where the truth table is filtered such that only rows where the input or output (IO) is equal to the given value are shown. Inequality constraints are of the form $LowerBound \leq IO \leq UpperBound$; the filtered truth table will only contain rows where the IO is between the lower and upper bounds (inclusive).
+\subsection{Constraint Types}
+This project adds two types of numerical constraints; equality constraints and inequality constraints, the type definitions for which can be seen in Listings \ref{lst:equalitycon} and \ref{lst:inequalitycon}. Equality constraints on an input or output are of the form $IO = value$, where the truth table is filtered such that only rows where the input or output (IO) is equal to the given value are shown. Inequality constraints are of the form $LowerBound \leq IO \leq UpperBound$; the filtered truth table will only contain rows where the IO is between the lower and upper bounds (inclusive). There is also a \codestyle{ConstraintType} DU which differentiates between Equality (\codestyle{Equ}) and Inequality (\codestyle{Ineq}) constraints.
 
 \begin{center}
 \noindent\begin{minipage}{.45\textwidth}
@@ -171,26 +97,170 @@ type InequalityConstraint = {
 \end{lstlisting} 
 \end{minipage}
 \end{center}
+
+A set of constraints is therefore simply a list of all equality constraints combined with a list of all inequality constraints. This is the definition of the \codestyle{ConstraintSet} type.
+
+\subsection{Algebra Types}
+\subsubsection{Algebraic Operators} \label{subsubsec:imp_algebraops}
+Table \ref{tab:algebraops} in Section \ref{subsec:algebraops} describes the algebraic operators the user may encounter in Issie. This sub-section describes the F\fsharp implementation of these operators. Algebraic operators in Issie are split into three Discriminated Union types: binary operators (\codestyle{type BinaryOp} which have two operands, unary operators (\codestyle{type UnaryOp}) which have one operand, and comparison operators (\codestyle{type ComparisonOp}). Currently, the there is only one comparison operator: \codestyle{Equals}, which compares an algebraic expression to an unsigned integer value. Listings \ref{lst:binaryop} and \ref{lst:unaryop} show all the different cases of binary and unary operators. There is one key omission from F\fsharp binary operators; the Append Operator. Initially, this was implemented as a binary operator, joining the two operands. However, in circuits with multiple connected \textit{MergeWires} components, a chain of nested append operators would form. Figure \ref{fig:mergewires} shows such a circuit. Expression \ref{equ:longappend} is the result of performing algebraic simulation when appends were implemented as binary operators. It features three pairs of parentheses which clutter the expression. In contrast, Expression \ref{equ:shortappend} communicates the same information without brackets. This cleaner expression was obtained by representing append operations as lists of expressions during algebraic simulation. This list itself is treated as an algebraic expression -- the nature of algebraic expressions in Issie is explained in Section \ref{subsubsec:imp_algebraexps}. A list representation is also easier to analyse, meaning that specific patterns in appends can be inferred. For example, successive appends of consecutive bits of the same IO ($A[7]::A[6:3]::A[2]$) can be folded into one Bit Range operation ($A[7:2]$). 
+\begin{center}
+\noindent\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption=Definition for Binary Operators,frame=tlrb, language=FSharp, label=lst:binaryop]{Name}
+type BinaryOp = 
+    | AddOp // A + B (mathematical addition)
+    | SubOp // A - B (mathematical subtraction)
+    | BitAndOp // A & B (bitwise AND)
+    | BitOrOp // A | B (bitwise OR)
+    | BitXorOp // A XOR B (bitwise XOR)
+
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption=Definition for Unary Operators,frame=tlrb, language=FSharp, label=lst:unaryop]{Name}
+type UnaryOp = 
+    | NegOp // -A (mathematical negation, bitwise two's complement)
+    | NotOp // bit inversion (bitwise XOR with -1)
+    | BitRangeOp of Lower:int * Upper:int // A[upper:lower] (subset of bits of A)
+    | CarryOfOp
+\end{lstlisting} 
+\end{minipage}
+\end{center}
+
+\begin{center}
+\noindent\begin{minipage}{.45\textwidth}
+\vspace{-2ex}
+\includegraphics[width=1.0\linewidth]{05.ImpPlan/mergewires.png}
+\captionof{figure}{\label{fig:mergewires}Circuit with multiple \textit{MergeWires} connected to each other}
+\end{minipage}\hfill %
+\begin{minipage}{.45\textwidth}
+\begin{equation} \label{equ:longappend}
+    OUT = (D::(C::(B::A)))
+\end{equation}
+\begin{center}
+Append as a Binary Operator
+\end{center}
+\vspace{2em}
+\begin{equation} \label{equ:shortappend}
+    OUT = D::C::B::A
+\end{equation}
+\begin{center}
+Append as a list of appended expressions
+\end{center}
+\end{minipage}
+\end{center}
+
+\subsubsection{Algebraic Expressions} \label{subsubsec:imp_algebraexps}
+Using a DU type, a short grammar was written to represent algebraic expressions in Issie. The grammar writing process in particular validated the choice of F\fsharp as a programming language for the project; the DU type allows for the grammar to be defined succinctly (only 7 lines of code), while pattern matching on DUs enables evaluation of an expression through a single recursive function. Large class hierarchies are therefore not required. Algebraic expressions in Issie are defined by the type \codestyle{FastAlgExp} -- the prefix \textit{Fast} is used as the algebraic expressions are used within the Fast Simulation.
+
+According to the grammar, an algebraic expression (\codestyle{FastAlgExp}) in Issie can be:
+\begin{enumerate}
+    \item \textbf{\codestyle{SingleTerm of SimulationIO}}: Represents a single algebraic term, which is an input. This case has the type \codestyle{SimulationIO} as every input in Issie is represented by that data structure.
+    \item \textbf{\codestyle{DataLiteral of FastData}}: Represents a numeric value in the simulation. 
+    \item \textbf{\codestyle{UnaryExp of Op: UnaryOp * Exp: FastAlgExp}}: Represents a unary expression. The unary operator (\codestyle{Op}) takes the expression (\codestyle{Exp}) as its operand. An example would be $-A$.
+    \item \textbf{\codestyle{BinaryExp of Exp1: FastAlgExp * Op: BinaryOp * Exp2: FastAlgExp}}: Represents a binary expression, in which a binary operator (\codestyle{Op}), such as '$+$', operates on two expressions. \codestyle{Exp1} is the left operand, \codestyle{Exp2} is the right operand.
+    \item \textbf{\codestyle{ComparisonExp of Exp: FastAlgExp * Op: ComparisonOp * uint32}}: Represents a comparison between an algebraic expression (\codestyle{Exp}) and a numeric value.
+    \item \textbf{\codestyle{AppendExp of FastAlgExp list}}: Represents an expression that is made up of a group of existing expressions appended together. The list is ordered such that the most significant bit is at the head of the list. F\fsharp lists are are implemented as singly-linked-lists, therefore adding a new item to the head of a list is an $O(1)$ operation. Therefore, having the MSB at the head of the list means that appending something further onto the \codestyle{AppendExp} is efficient.
+\end{enumerate}
+
+\subsection{The \codestyle{TableInput} Data Type}
+The \codestyle{TableInput} data type is used when generating the input space of the truth table. As discussed in Section \ref{subsec:evolutionofinputspace}, the method for generating a limited input space needs to know exactly which specific input combinations to generate out of potentially billions of possible combinations. To achieve this, a new data structure for representing inputs was required; one which stores more than  the \codestyle{SimulationIO} type. The \codestyle{TableInput} is a record type, and its fields are described by Table \ref{tab:tableinput}.
+The term \textit{Row Count} in the context of the input space generation refers to the size of the set ($S_i$) of unique values an input ($x_i$) can contribute to a table.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|m{4cm}|m{9cm}|}
+    \hline
+        \textbf{Field and Type} & \textbf{Explanation} \\ \hline
+        IO: \codestyle{SimulationIO} & Inputs in Issie are represented by the SimulationIO type, which contains the Component ID, Component Label, and the width of the input. \\ \hline
+        IsAlgebra: \codestyle{bool} & True if the input is algebraic, as opposed to numeric \\ \hline
+        MaxRowCount: \codestyle{int} & The total size of the Set $S_i$, which is equal to $2^{w_i}$, where $w_i$ is the width of the input. \\ \hline
+        ConstrainedRowCount: \codestyle{int} & The size of the subset of $S_i$ which contains all input values which conform with the input constraints. For example, if there were the following constraints on the input: $0 \leq x \leq 6$ \& $x = 9$, the Constrained Row Count would be 8. Constrained Row Count is always less than or equal to Max Row Count. \\ \hline
+        AllowedRowCount: \codestyle{int} & The number of input values the given input is actually allowed to contribute to the truth table. Ideally, this is equal to the Constrained Row Count, but in situations where the truth table has to be truncated, the Allowed Row Count may be limited to keep the total number of rows in the truth table under the overall limit. \\ \hline
+    \end{tabular}
+    \caption{Explanation of Fields in the \codestyle{TableInput} data structure}
+    \label{tab:tableinput}
+\end{table}
+
+\subsection{Table Manipulation Data Types}
+The following data types are used in messages sent from the view function to the update function to indicate that some UI interaction has occurred which requires updating certain parts of the model.
+
+\subsubsection{When the Truth Table is out of date}
+There are numerous operations a user can perform on a truth table. These range from adding input or output constraints to changing the order of columns. The actions render the displayed truth table out of date. Updating the truth table depends on the action performed as re-generating the table from scratch for all actions would be wasteful and inefficient. Therefore, the update function needs to know exactly which action caused the table to go out of date. This is the purpose of the \codestyle{ReasonOutOfDate} DU type. There are four reasons a truth table may be out of date:
+\begin{itemize}
+    \item \codestyle{Regenerate}: The truth table needs to be re-generated from scratch. This is due to a change in input constraints or algebraic inputs.
+    \item \codestyle{Refilter}: Output constraints have changed, so the truth table needs to be filtered again using the updated constraints.
+    \item \codestyle{ReSort}: The IO the table is to be sorted by and/or the order it needs to be sorted in has changed. Sort the table again to reflect this.
+    \item \codestyle{HideCol}: An output column has been hidden or unhidden -- change the truth table to reflect this.
+\end{itemize}
+The circumstances in which these messages are sent, and what exactly happens when they are received will be covered in further detail later in this chapter.
+
+\subsubsection{Truth Table Sorting direction}
+\begin{lstlisting}[caption=Definition for Sort Type,frame=tlrb, language=FSharp, label=lst:ttsort]{Name}
+type SortType = | Ascending | Descending
+\end{lstlisting} 
+As shown in Listing \ref{lst:ttsort}, sorting can be done in ascending or descending order.
+
+\subsubsection{Changing the Order of Columns}
+\begin{lstlisting}[caption=Definition for Movement Direction,frame=tlrb, language=FSharp, label=lst:ttmovecol]{Name}
+type MoveDirection = | MLeft | MRight
+\end{lstlisting} 
+As shown in Listing \ref{lst:ttmovecol}, columns can be moved left or right.
+
+\section{Top Level UI Changes}
+\subsection{Simulation Sub-tabs}
+All activities that involved some form of circuit simulation were organised under the \textbf{Simulations} tab (formerly called Simulation) using sub-tabs. The right section tabs are implemented with the Fulma \cite{fulmaio} Tabs component. The Sub-tabs are implemented by nesting a second Fulma Tabs component within the body of the Simulations tab, and making ensuring that a sub-tab is visible only when it and the parent tab is open.
+
+\subsection{Moving the Waveform Simulator}
+Due to its inconsistent placement and strange tab-spawning behaviour, the decision was made to move the waveform simulator into its own, permanent sub-tab. The move was quite straightforward; the \textit{Waveforms} button was moved to the sub-tab, a greeting was also displayed. However, one small change had to be made to how the waveform simulator operated. When a waveform simulation is running, other tabs in the app are inaccessible by design. Previously, the waveform simulation tab would only open when the user was either starting or viewing a waveform simulation. Therefore, the existence of the tab was a valid metric for ascertaining whether the app should make other functions inaccessible. Following the changes, however, the existence of the waveform simulation tab is independent of whether a waveform simulation is running. Therefore, a new pair of messages \codestyle{LockTabsToWaveSim} and \codestyle{UnlockTabsFromWaveSim} can be used to control when the user is locked into the Waveform Simulator.
+
+\subsection{Dynamic Dividerbar Resizing}
+The dividerbar is situated between the canvas and the right section and marks the boundary between the two. During waveform simulation, the dividerbar becomes draggable to let the user view more content by resizing the right section. This functionality was also extended to truth tables. However, there was a bug in the implementation of the dividerbar. The CSS Style for the dividerbar element sets its height to 100\% of the right section. If the height of the the content in the right section exceeds the initial height of the right section, the latter \textit{overflows} and becomes scrollable. The 100\% height styling on the dividerbar did not take the overflow into account, meaning that the dividerbar would slowly disappear off screen as the user scrolled down. This issue was fixed by getting the right section \codestyle{div} element from the DOM Tree, and reading its \codestyle{scrollHeight}, which takes overflow into account. 
+
+\section{Generating Truth Tables}
+Figure \ref{fig:ttGen} in Section \ref{sec:analysis_ttGen} described the high-level method for generating truth tables in Issie. In the interest of consistency for both the user and future developers, as well as ease of maintenance, the truth table generation code either uses the Step Simulator code, or conforms with its design language.
+
+
+
+% For only two multi-bit inputs, the library function \codestyle{List.allPairs} \cite{ListFuns} can be used to find this Cartesian product, with each set of possible values being passed in as a List. However, no such library function exists for $n$ sets/lists. The function \codestyle{numbComb} was implemented to find the Cartesian product of $n$ lists. The function is tail recursive for improved performance.
+
+
+
+
+\subsection{Truth Table Generation Algorithm}
+\emph{Associated Requirements:} \textbf{E1.1}, \textbf{E1.3}, \textbf{E1.6}
+
+
+Figure \ref{fig:ttGen} shows a high-level view of the method used to generate truth tables in Issie. The user initiates truth table creation by clicking on a button. Following this, 
+
+As outlined in the previous section, the major hurdle to overcome during truth table generation was the immense size of the input space, as generating and mapping a large input space to its corresponding output space was deemed both inefficient and unnecessary. The final generation algorithm solves this issue by limiting the maximum size the input space can grow to. If the truth table has more input combinations than the limit allows, the truth table is \textbf{truncated}, and only the maximum number of allowed rows are shown. Following some trial-and-error testing, a maximum value of 1024 ($2^10$) rows was chosen. This would allow for small circuits to be wholly represented by the generated truth table, while still allowing for relatively fast truncated truth table generation for larger circuits. The issue with using truncation alone is that the generated truth table does not fully represent the logic. Therefore, users may not be able to find specific rows in the truth table, and conclusions drawn from the truth table may not always be accurate. As a result, the final generation algorithm reduces the input space by \textbf{first applying input constraints, and then truncating if necessary}. If a user generated truth table is truncated, they are warned and it is suggested that they apply more restrictive input constraints to view a specific subset of the truth table.
+
+
+
+\subsubsection{Algorithm for generating the Input Space}
+
+
+\subsection{Numerical Constraints}
+\emph{Associated Requirements:} \textbf{E1.5}
+
+As per the requirements, users should have a way of filtering the truth table by applying numerical constraints to table inputs and outputs. This is necessary to reduce the size of the table and allow users to analyse relationships between inputs and outputs for a subset of the input space. 
+
+
 % \subsubsection{Visualising Truth Tables}
 % As of the Interim report, Truth Tables are visualised using Fulma Tables. They are clear, responsive and do a good job overall. However, they lack interactivity. Therefore, it is anticipated that they will be replaced or modified in the future. For viewing multi-bit inputs and outputs, hexadecimal was chosen over binary as it would take up less physical space. Currently, there is no option to change number base (as there is in the Step Simulator), but this would be trivial to implement in the future. Truth Table generation and viewing is done in an MVU way; pressing the "Generate Truth Table" button causes a truth table to be generated and stored in the \textbf{Model} through a message which is processed by the \textbf{Update} function. On the next call of the View function, this Truth Table is rendered.
 
 
-
-
-\newpage % Here to ensure flowchart figure is in the right place
-
 \subsection{Generating Truth Tables for a partial selection of a Sheet}
 \emph{Associated Requirements:} \textbf{E1.2}, \textbf{E1.3}
 
-The motivation behind Requirement \textbf{E1.2} is that a large schematic with lots of components will often contain smaller blocks of logic within it. These blocks may be defined Custom Components, or simply be a collection of gates in one corner of the canvas. Either way, there is value in the user being able to isolate these blocks and learn about the combinational logic implemented by them. Such functionality would also allow users to take a divide-and-conquer approach to debugging logical errors - individual blocks could be inspected to ascertain if they had been implemented correctly. 
+% The motivation behind Requirement \textbf{E1.2} is that a large schematic with lots of components will often contain smaller blocks of logic within it. These blocks may be defined Custom Components, or simply be a collection of gates in one corner of the canvas. Either way, there is value in the user being able to isolate these blocks and learn about the combinational logic implemented by them. Such functionality would also allow users to take a divide-and-conquer approach to debugging logical errors - individual blocks could be inspected to ascertain if they had been implemented correctly. 
 
-A challenge with generating a truth table from part of a canvas is that Issie has no existing method for simulating part of a canvas. When working with a whole sheet, the inputs and outputs are well-defined; sheets where any ports aren't connected to inputs/outputs throw \textit{Simulation Errors}. In contrast, a partial selection from a sheet will rarely contain all inputs and outputs. Two methods were considered for simulating the selected logic to generate a truth table, with the latter being chosen.
-\begin{enumerate}
-    \item \textbf{Extracting the Fast Simulation and feeding values into specific wires}. This method would have involved creating a Fast Simulation for the whole sheet as usual, but then manually changing values in component arrays and seeing how those changes propagated through to the output connections of the selected logic. While this method seemed fit initially, several issues were found after some analysis. The Fast Simulation would be built for the whole sheet, meaning that an error elsewhere on the canvas would stop the selected logic from being simulated. Custom Components would also be harder to manage as the Fast Simulation datatype flattens the design, meaning that all nested logic in Custom Components would be expanded out. The new logic would also be quite different from the truth table generation logic for whole sheets - this is not ideal for future code maintenance purposes.
-    \item \textbf{Intelligently building and correcting a new Canvas}. Following the highlighting of the issues with the first approach, an alternative approach was put forward. Rather than attempting to work with the complicated Fast Simulation data structure, it instead aims to use as much of the existing code as possible by treating the selected logic as a separate instance of a Canvas State and trying to simulate it using the same method as simulating a whole canvas. The main difference between simulating a whole sheet and simulating selected logic is the lack of guaranteed input and output components. This is overcome by finding which ports/connections are inputs/outputs for the selected logic, then intelligently adding 'phantom' input/output components to the canvas in a process called Canvas Correction. Once a corrected canvas corresponding to the selected logic is created, the logic used for generating and viewing a Truth Table for a whole sheet can be reused.
-\end{enumerate}
+% A challenge with generating a truth table from part of a canvas is that Issie has no existing method for simulating part of a canvas. When working with a whole sheet, the inputs and outputs are well-defined; sheets where any ports aren't connected to inputs/outputs throw \textit{Simulation Errors}. In contrast, a partial selection from a sheet will rarely contain all inputs and outputs. Two methods were considered for simulating the selected logic to generate a truth table, with the latter being chosen.
+% \begin{enumerate}
+%     \item \textbf{Extracting the Fast Simulation and feeding values into specific wires}. This method would have involved creating a Fast Simulation for the whole sheet as usual, but then manually changing values in component arrays and seeing how those changes propagated through to the output connections of the selected logic. While this method seemed fit initially, several issues were found after some analysis. The Fast Simulation would be built for the whole sheet, meaning that an error elsewhere on the canvas would stop the selected logic from being simulated. Custom Components would also be harder to manage as the Fast Simulation datatype flattens the design, meaning that all nested logic in Custom Components would be expanded out. The new logic would also be quite different from the truth table generation logic for whole sheets - this is not ideal for future code maintenance purposes.
+%     \item \textbf{Intelligently building and correcting a new Canvas}. Following the highlighting of the issues with the first approach, an alternative approach was put forward. Rather than attempting to work with the complicated Fast Simulation data structure, it instead aims to use as much of the existing code as possible by treating the selected logic as a separate instance of a Canvas State and trying to simulate it using the same method as simulating a whole canvas. The main difference between simulating a whole sheet and simulating selected logic is the lack of guaranteed input and output components. This is overcome by finding which ports/connections are inputs/outputs for the selected logic, then intelligently adding 'phantom' input/output components to the canvas in a process called Canvas Correction. Once a corrected canvas corresponding to the selected logic is created, the logic used for generating and viewing a Truth Table for a whole sheet can be reused.
+% \end{enumerate}
 
-Prior to the canvas correction stage, the selected components are checked. If only connections are selected, then a \textit{Simulation Error} is returned to the user informing them of their mistake.
+% Prior to the canvas correction stage, the selected components are checked. If only connections are selected, then a \textit{Simulation Error} is returned to the user informing them of their mistake.
 
 \subsubsection{Canvas Correction}
 \begin{itemize}
