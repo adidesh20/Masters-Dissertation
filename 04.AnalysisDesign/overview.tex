@@ -132,7 +132,7 @@ Once added, the constraint will appear as a small tag in the Filter section -- t
          \label{fig:tabwithconstraint}
      \end{subfigure}
         \caption{Adding a Constraint to the Truth Table}
-        \label{fig:tttab}
+        \label{fig:constraintadd}
 \end{figure}
 
 \section{Hiding Output Columns}
@@ -141,20 +141,27 @@ The second menu section allows the user to hide (or un-hide) output or viewer co
 \section{Graphical Manipulation of Truth Tables}
 \textbf{Re-ordering Columns} On either side of each IO label in the heading row, there are left and right arrows. These allow the user to arrange the truth table as they please by changing the order of columns in the truth table.
 
-\textbf{Sorting} In each IO heading cell, there are a pair of up/down arrows for sorting the truth table by the values of that IO. Selecting the up arrow sorts in ascending order, while selecting the down arrow sorts in descending order. Once selected, an arrow remains highlighted (until another is selected), to inform the user of how the truth table is being sorted. 
+\textbf{Sorting} In each IO heading cell, there are a pair of up/down arrows for sorting the truth table by the values of that IO. Selecting the up arrow sorts in ascending order, while selecting the down arrow sorts in descending order. Once selected, an arrow remains highlighted (until another is selected), to inform the user of how the truth table is being sorted. The rationale behind implementing truth table sorting is that it allows users to organise the information they view, increasing the control they have over their learning experience. 
 
 \textbf{Auto-resize with dividerbar} The draggable dividerbar can be used to resize the right section. The truth table will dynamically resize to match the set right section width, and contents of cells will wrap to the next line and automatically adjust such that no content is cut off.
 
 All of the operations above happen instantaneously (<100ms); achieving such performance with column-based operations relied on the same decisions as those which made hiding columns appear instantaneous (see Section \ref{sec:ttView}).
 
-\section{Don't Care Reduction}
+\section{Don't Care Reduction} \label{sec:dcreductionanalysis}
 If the generated numeric truth table is \textbf{not truncated}, then the user can reduce it through Don't Care reduction. When the user presses the \textit{Reduce} button, the truth table will be analysed, and any rows where certain inputs are redundant will be collapsed, with the value for that input being replaced by an \textbf{X}. The user can always return to the full table by clicking the \textit{Back to Full Table} button. Like their full numeric counterparts, reduced truth tables can also be filtered and sorted.
 If the truth table is truncated, Don't Care reduction is unavailable; this is communicated to the user by a greyed-out \textit{Reduce} button. Hovering over the disabled button will show the user a popup explaining why the option is unavailable.
 
 As discussed in Section \ref{subsec:dcbackground}, two possible methods of implementing DC Reduction were considered; either porting an existing heuristic-based minimisation tool to Issie, or writing a reduction algorithm from scratch. Ultimately, the latter was chosen. This is because existing minimisation tools are tailored towards hardware design in industry, where the priority is simplifying the design so it requires fewer components. There is a risk that complicated simplification may in fact obscure the logic further; this is the opposite of this project's intention. Further to this, current minimisation tools like Espresso \cite{espresso} do not support multi-bit inputs and outputs, which would make integration with Issie's existing framework difficult. Given the decision to not split up multi-bit IOs in Issie, Espresso was deemed unfit. The custom reduction algorithm takes an un-truncated numeric truth table and attempts to reduce it by recursively finding redundancies through row comparisons.
 
 \section{Algebraic Truth Tables}
-In addition to numeric truth tables, this project also adds algebraic truth tables to Issie. Instead of numerical values, outputs are instead represented as an algebraic function of their inputs. These algebraic functions are loosely based on Boolean algebra, but do include other operators such as addition and subtraction in order to provide a more useful summary of relationships. Users can introduce algebra into an existing numeric truth table by clicking the \textit{Algebra} button above the truth table. This will spawn a popup, where the user can choose which inputs to set as algebraic, and which inputs should remain numerical. There exist cases when certain inputs cannot be set as algebra, such as when an input is connected to the select (SEL) port of a multiplexer. The user is prevented from setting those inputs as algebraic values, and a helpful error message informs the user why.
+In addition to numeric truth tables, this project also adds algebraic truth tables to Issie. Instead of numerical values, outputs are instead represented as an algebraic function of their inputs. These algebraic functions are loosely based on Boolean algebra, but do include other operators such as addition and subtraction in order to provide a more useful summary of relationships. Users can introduce algebra into an existing numeric truth table by clicking the \textit{Algebra} button above the truth table. This will spawn a popup, where the user can choose which inputs to set as algebraic, and which inputs should remain numerical. There exist cases when certain inputs cannot be set as algebra, such as when an input is connected to the select (SEL) port of a multiplexer. The user is prevented from setting those inputs as algebraic values, and a helpful error message informs the user why. An example of this can be seen in Figure \ref{fig:algpopup}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{04.AnalysisDesign/algebrapopup.png}
+    \caption{Algebra Input Selector popup}
+    \label{fig:algpopup}
+\end{figure}
 
 \subsection{Designing the System for Algebra}
 The design of the system for the generation of Algebraic Truth Tables was one of the most complex activities undertaken by the project, with numerous decisions being taken regarding which features to implement and the overall approach to take. The requirements stated that support for circuits containing combinations of multiplexers and adders was the bare minimum (\textbf{D1.1.1}), but ideally Issie should support algebra for most combinational circuits.
@@ -169,27 +176,3 @@ The second approach was far more general; introduce a method for simulating a sh
 The advantage of the first approach was that Requirement \textbf{D1.1.1} would be fulfilled quite easily. Following the experience of writing the Canvas Correction algorithm, it was known that checking for specific cases in the canvas state was possible, and therefore recognition of multiplexer and adder circuits could be implemented quickly. However, extending it further than that could be more challenging; the canvas state is closely related to how the user has built the schematic, and there are many different ways of implementing the same logical function. Therefore, adding support for complex relationships would likely require many cases to be checked. Furthermore, repeatedly checking the canvas state for increasingly complicated cases would increase the generation time. On the other hand, adding algebra to the Fast Simulator would be a lengthy process, increasing the amount of time required to complete \textbf{D1.1.1}. However, as the Fast Simulator is already compatible with all correct Issie schematics, it would be easier to extend algebraic simulation, as required by \textbf{D1.1.2}. Merely modifying the Fast Simulator would also introduce fewer lines of code into the Issie codebase, making further maintenance easier. Additionally, adding algebraic simulation to the Fast Simulator would mean that the Step Simulator, in theory, would also be able to support algebra. 
 
 With all points considered, algebraic simulation was chosen over analysing the schematic. The Fast Simulator has been augmented so that it can receive both numeric and algebraic values as inputs to a simulation. It will then return outputs as functions of the algebraic inputs.
-
-\subsection{Algebraic Operators} \label{subsec:algebraops}
-\begin{table}[!ht]
-    \centering
-    \begin{tabular}{|m{4cm}|m{1.5cm}|m{8cm}|}
-    \hline
-        \textbf{Operator Name} & \textbf{Symbol} & \textbf{Explanation} \\ \hline
-        Numeric Addition & + & Binary operator which represents mathematical addition of its two operands. \\ \hline
-        Numeric Subtraction & - & Binary operator which represents mathematical subtraction of its right operand from its left operand. \\ \hline
-        Bitwise And & \& & Binary bitwise And operator for which works with both single and multi-bit outputs. \\ \hline
-        Bitwise Or & | & Binary bitwise Or operator for which works with both single and multi-bit outputs. \\ \hline
-        Bitwise Xor & $\bigoplus$ & Binary bitwise Xor operator for which works with both single and multi-bit outputs. \\ \hline
-        Numeric Negation & - & Unary negation operator, indicates that the single operand will have its sign inverted \\ \hline
-        Bitwise Not & \texttildelow & Unary bitwise Not operator, indicates that all bits of the single operand will be inverted \\ \hline
-        Carry Of & carry() & Unary operator which signifies that the result is the single-bit carry-out from an arithmetic expression. This expression is the operand, which is situated in the parentheses. \\ \hline
-        Bit Range & A[u:l] & Unary operator with two parameters: an upper and lower bound. Indicates that a specified range of bits (inclusive) will be selected from the operand. \\ \hline
-        Equals & == & Logical operator which checks for equivalence between some algebraic expression and a numeric value. \\ \hline
-        Append & A::B & Binary operator which joins the bits of the two input operands into one result whose width is the sum of the input widths. The left operand bits become the MSBs, right operand bits become LSBs. \\ \hline
-    \end{tabular}
-    \caption{Operators in Issie's Algebraic Expressions}
-    \label{tab:algebraops}
-\end{table}
-
-Table \ref{tab:algebraops} describes all the algebraic operators which can be found in algebraic expressions in truth tables. The operators are not from a singular algebraic system -- for example Boolean and mathematical operators are both present in Table \ref{tab:algebraops}. Instead, operators were chosen based on their semantic value (i.e. how effectively could they communicate what the logic was implementing).

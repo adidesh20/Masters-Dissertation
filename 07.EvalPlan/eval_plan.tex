@@ -1,0 +1,85 @@
+\chapter{Evaluation}
+
+\section{Evaluation against Requirements}
+This project has two main deliverables; an extended and improved version of Issie, and any appropriate documentation for the application. At the beginning of the project, a series of requirements were formalised which determined what the project should aim to accomplish, and under what circumstances could it be considered successful. 
+\subsection{Evaluation against Requirements for Logic Visualisation}
+\subsubsection*{Essential Requirements}
+\begin{itemize}
+    \item[\textbf{E1.1}] \textbf{Pass}, a numeric truth table can be generated for a sheet containing combinational logic. This truth table is exhaustive when the sum of input widths is under 10. Otherwise, it is still correct, but truncated.
+    \medskip
+    \item[\textbf{E1.2}] \textbf{Pass}, a numeric truth table can be generated for a partial selection of a sheet. This truth table is exhaustive when the sum of input widths is under 10. Otherwise, it is still correct, but truncated.
+    \begin{itemize}
+        \item[\textbf{E1.2.1}] \textbf{Pass}, new inputs and outputs are created to form a correct Issie schematic.
+        \item[\textbf{E1.2.2}] \textbf{Pass}, the newly generated inputs and outputs have intelligently inferred labels based on which component port they are connected to.
+    \end{itemize}
+    \medskip
+    \item[\textbf{E1.3}] \textbf{Pass}, the truth table generating algorithm can handle:
+    \begin{itemize}
+        \item[\textbf{E1.3.1}] Multi-bit inputs and outputs. Temporary inputs/outputs created while generating a truth table for a selected logic block  have correct widths inferred using either \codestyle{WidthInferrer} or the connected component.
+        \item[\textbf{E1.3.2}] Custom Components (sub-sheets), including when they are part of selections.
+        \item[\textbf{E1.3.3}] Displaying inputs, outputs, and viewers.
+    \end{itemize}
+    \medskip
+    \item[\textbf{E1.4}] \textbf{Pass}, users have the option to reduce the truth table using Don't Cares (untruncated tables).
+    \medskip
+    \item[\textbf{E1.5}] \textbf{Pass}, filtering of truth tables with input and output constraints is implemented. Caveat on output constraints is that they only filter the generated table, so does not return the full set for a truncated table.
+    \medskip
+    \item[\textbf{\textbf{E1.6}}] \textbf{Pass}, truth tables are displayed in a clear and easy to understand format, with striping to make differentiating rows easier. Features involving truth tables are presented in a menu which can be easily explored and clicked through. Messaging is consistent and guides the user.
+    \item[\textbf{\textbf{E1.7}}] \textbf{Pass}, truth table generation and reduction do not take longer than 4 seconds. The fast generation time is due to truncation, but there is not much value in generating more rows. Furthermore, generating more rows makes the UI feel sluggish.
+    \item[\textbf{\textbf{E1.8}}] \textbf{Pass}, graphical manipulation operations on the Truth Table, such as re-ordering rows, sorting etc. appear instantaneous (i.e. take less than 100ms).
+    \item[\textbf{E1.9}] \textbf{Pass}, through truth table reduction and viewing of algebraic truth tables, complex relationships implemented by large circuits, such as ALUs, can be summarised in a few different expressions.
+\end{itemize}
+
+\subsection*{Desirable Features}
+\begin{itemize}
+    \item[\textbf{D1.1}] \textbf{Pass}, algebraic truth tables have been added to Issie.
+    \begin{itemize}
+        \item[\textbf{D1.1.1} \& \textbf{D1.1.2}] Support for a wide variety of components and circuits, only a few limitations.
+    \end{itemize}
+    \medskip
+    \item[\textbf{D1.2}] \textbf{Pass}, an interactive truth table interface has been provided, where the user can change the view of the table.
+    \begin{itemize}
+        \item[\textbf{D1.2.1}] \textbf{Not Implemented}, implementing functionality where mousing over parts of the truth table could highlight parts of the schematic was considered, however it was decided that it would not bring much value to the user experience. Time was instead spent improving the UI of the truth table tab itself.
+        \item[\textbf{D1.2.2}] \textbf{Pass}, users can rearrange order of columns/rows in the truth table.
+        \item[\textbf{D1.2.3}] \textbf{Pass}, users can sort the truth table in ascending and descending order.
+    \end{itemize}
+    \medskip
+    \item[\textbf{D1.3}] \textbf{Pass}, the user can access truth table related functionality easily -- all features are contained within the truth table tab, and are either presented on the truth table itself (sorting and moving columns), or grouped under a labelled menu section. This way, all functionality is accessible from one location in a consistent manner, while also keeping the UI free from clutter.
+\end{itemize}
+
+\subsection{Evaluation against Software/Documentation Requirements}
+\subsubsection*{Essential requirements}
+\begin{itemize}
+    \item[\textbf{E3.1}]\textbf{Pass}, the project has delivered performant, working, bug-free code which adheres to Issie's code guidelines and other principles such as "MVU-ness".
+    \medskip
+    \item[\textbf{E3.2}] \textbf{Pass}, XML comments have been written for all functions in the delivered code, alongside other inline comments to explain how certain key parts work in order to make the codebase more maintainable for future developers.
+    \medskip
+    \item[\textbf{E3.3}] \textbf{Pass}, code has been written with maintainability in mind. Care has been taken to use standard library data structures and functions as much as possible, and any newly introduced types and processes have been documented extensively in the code.
+\end{itemize}
+
+\subsection*{Desired features}
+\begin{itemize}
+    \item[\textbf{D3.1}] \textbf{Pass (partially)}, certain UI changes, such as moving the Waveform simulator and fixing bugs related to the dividerbar were implemented. The UI was not redesigned , however it was evaluated and its current form appears to be adequate.
+    \medskip
+    \item[\textbf{D3.2}] Update the Issie website with information about any newly added features.
+\end{itemize}
+
+\subsection{Summary}
+Comparing the output of the project deliverables against the initial requirements set out for them shows that the project has been successful. Every single essential requirement, as well as the majority of the desired requirements, have been fulfilled.
+
+\section{Evaluation against Issie's Core Principles}
+
+\subsection{Robustness}
+TBA
+\subsection{Obviousness}
+TBA
+\subsection{Intuitiveness}
+TBA
+
+% The bare minimum expectation of the project is that it \textbf{must} fulfil all Essential Requirements outlined in the Requirements Capture (Chapter \ref{chap:requirements}). Anything less than this would suggest that the project was not successful in achieving its goals. The only exception to this would be that if, during the development process, a feature outlined by a requirement was deemed to be unnecessary and therefore changed. The success of the project will also be measured on how many of the Desired Features are fulfilled, with the ideal scenario being that all requirements are satisfied. 
+
+% Most of the outlined requirements are features that the final deliverable should incorporate. Therefore, these requirements can simply be evaluated by opening the application and testing that they work as intended. The correctness of such features can be tested by opening existing Issie schematics featuring various circuits built by users, and checking if the added features perform as expected when used on those sheets. Additionally, testing will occur throughout the development process - each feature will be unit tested prior to its integration to Issie. 
+% In contrast to the type mentioned above, certain requirements cannot be objectively judged as complete, such as those related to intuitiveness of the UI. The subjective nature of such requirements mandates that their satisfaction be evaluated by multiple end-users. Therefore, the chosen evaluation methods for Requirements \textbf{E1.6}, \textbf{E1.7}, and \textbf{D3.1} will be a survey answered by volunteers who have spent time using the delivered application to perform a series of basic tasks.
+
+% \section{Overall Evaluation}
+% The overall aim of the project is to improve Issie as a digital electronics education tool and as a logic design application. The effectiveness of the features this project will add must be judged by those who stand to benefit from them - the user base. Therefore, the survey mentioned in the previous section will also include questions on if the newly added features helped them in designing the logic specified in the tasks. For one task in the survey the group will be split into two teams, with one using the original version of Issie and the other the one delivered by this project. The students will be given a series of custom components which implement increasingly complex, but still identifiable logic. The students will be asked to use Issie to identify which actual component the custom component implements using the tools their version of Issie provides them. The amount of time it takes them to reach an answer, and the correctness of that answer, will contribute to their score. The correlation between scores and Issie version will be observed and used to evaluate the version of Issie delivered by this project.
