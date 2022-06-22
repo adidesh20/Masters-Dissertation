@@ -10,7 +10,25 @@ This project does not make any deviations from Issie's existing technology stack
 \input{04.AnalysisDesign/overview}
 
 \section{Considering Logic Input with Truth Tables}
-TBA
+In addition to visualising combinational logic, the possibility of using truth tables as a method for combinational logic input was also considered. Issie in its current form only allows for combinational logic input via the canvas; components and connections are manually arranged by the user into a valid schematic. 
+The goal of the digital electronics and computer architecture curriculum at Imperial College is to first build up students’ understanding of digital circuit design using schematics, and then eventually transition to the use of Hardware Description Languages (HDLs) in subsequent modules. Component-level schematics tend to focus on the propagation of digital signals through multiple components, while HDLs describe circuits at a behavioural level, focusing on the relationships between inputs and outputs. Defining logic using truth tables could possibly bridge the learning gap between these two concepts; prompting users to shift their design approach towards the more abstracted view of functionally mapping inputs to outputs, while also providing a familiar environment (truth tables instead of Verilog) for defining those functions.
+
+The following system was envisaged: users would be able to define a custom hierarchical component by defining the truth table for that component. This process would begin by the user providing the names and widths of each input and output on the custom component. Using the provided inputs, the input space (left hand side) for the component's truth table would be calculated and displayed to the user with a blank right hand side. For small input spaces, the user could manually enter the output corresponding to each input row. For larger input spaces, the user would be prompted to set certain inputs as algebra, and populate the outputs with algebraic expressions which were a function of the inputs. The arguments for and against implementing this system were considered, and are presented in Table \ref{tab:logicinput}. While there was a concern that giving users a way to directly define components may detract from them learning schematic design, it was decided that from an educational perspective the system would improve Issie. However, certain issues with the implementation of algebraic truth tables for logic input were identified. A GUI would have to be developed for users to enter algebraic expressions; these would then have to be lexed and parsed. This activity was estimated to take a significant amount of time. Additionally, the algebraic relationships would have to be converted to Verilog. It was deemed that the educational benefit brought by implementing logic creation through user-entered truth truth tables was outweighed by the time investment necessary to implement the system, and that more tangible returns could be achieved by focusing that time elsewhere.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|m{7cm}|m{7cm}|}
+    \hline
+        Pros & Cons \\ \hline
+        Can help bridge the conceptual gap between component-level design and more abstracted HDL design patterns. & While gate-level design and HDLs are widely used in industry, Issie's algebraic truth table system is not standard. Therefore, using it may not transfer well into later education or industry. \\ \hline
+        Would decrease the time spent designing specific components, as specific gate level operations need not be considered. This improves the user experience. & Decreasing the number of times students build gate-level designs could itself detract from their learning experience. \\ \hline
+        Flexible, users can choose to define all cases or use algebraic expressions to define the component. For example, inputs which control certain parameters of operation can be left as numeric values, while operands to functions can be defined as algebraic expressions. & A GUI for entering truth tables will have to be created. Additionally, to support algebra a GUI, as well as a lexer and syntax checker will have to be created -- this is will take a significant amount of time. If algebra is not implemented, truth table definitions may only be used to define less complex components, decreasing the effectiveness of the system. \\ \hline
+        ~ & Issie schematics currently can be exported as Verilog. Therefore, a function for converting a truth table component to Verilog would have to be written. This is straightforward for pure numeric truth tables, but challenging for algebraic truth tables. \\ \hline
+    \end{tabular}
+    \caption{Arguments for and against implementing truth-table defined custom components}
+    \label{tab:logicinput}
+\end{table}
+
 
 
 % \subsection{Generating Numeric Truth Tables}

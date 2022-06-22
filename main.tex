@@ -34,14 +34,16 @@ sorting=none
 \usepackage{listings}
 \usepackage{wrapfig}
 \usepackage{color}
-\usepackage{algorithmicx}
-\usepackage{algpseudocode}
+%\usepackage{algorithmicx}
 \usepackage{tabularx,array}
 \usepackage[parfill]{parskip}
 \usepackage{upquote}
 \usepackage{multirow}
 %\usepackage[altpo]{backnaur}
 \usepackage[nounderscore]{syntax}
+\usepackage{changepage}
+\usepackage{tabularray}
+\usepackage{pgfplots} 
 
 \newenvironment{bnfsplit}[1][0.7\textwidth]
  {\minipage[t]{#1}$}
@@ -75,16 +77,16 @@ mutable, if, then, else, cloud, async, static, use, abstract, interface, inherit
 
 %\setlength{\parindent}{0pt}
 
-\titleformat{\chapter}[display]
-  {\Huge\bfseries}
-  {}
-  {0pt}
-  {\thechapter.\ }
-\titleformat{name=\chapter,numberless}[display]
-  {\Huge\bfseries}
-  {}
-  {0pt}
-  {}
+% \titleformat{\chapter}[display]
+%   {\Huge\bfseries}
+%   {}
+%   {0pt}
+%   {\thechapter.\ }
+% \titleformat{name=\chapter,numberless}[display]
+%   {\Huge\bfseries}
+%   {}
+%   {0pt}
+%   {}
 
 \title{FYP Interim Report}
 \author{Aditya Deshpande }
@@ -103,6 +105,6 @@ mutable, if, then, else, cloud, async, static, use, abstract, interface, inherit
 \input{08.Conclusion/conclusion}
 
 \printbibliography
-
+\appendix
 \input{Appendices/apps}
 \end{document}

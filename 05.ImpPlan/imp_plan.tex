@@ -1,5 +1,8 @@
 \chapter{Implementation}
 
+This section describes the manner of implementation of all features described in the previous section, discussing specific methods, algorithms and language constructs.
+The additions made by this project project are implemented almost entirely in F\fsharp, and the complete codebase can be found at \url{https://github.com/adidesh20/issie}. The specific in-code changes made by this project can be found by viewing the commit history of the repository. The repository additionally serves as a logbook of completed work; commit messages are time-stamped and provide context to code changes. While this section discusses many interesting aspects of the project implementation, including challenges, compromises, and intelligent design, granular details of the pure coding activities of the project are not given. The code was written and structured with readability, re-usability and efficiency in mind -- some examples of these concepts in action are highlighted, however the adherence of the code to these concepts can be verified by inspecting codebase itself. 
+
 \section{Overview of Data Types}
 Various new F\fsharp types have been introduced to Issie by this project. This section describes these types and provides context to them, explaining their function and the rationale behind their creation.
 
@@ -218,7 +221,22 @@ From the \textit{Truth Table} tab, users can generate truth tables for the whole
 If the simulation building process returns valid \codestyle{SimulationData}, a truth table can be generated. Therefore, the user is shown a green \textit{Generate Truth Table} button. If a \codestyle{SimulationError} is returned, the button will be yellow instead and clicking it will display the error message.
 
 \subsection{Calculating the Input Space}
-As discussed in Section \ref{sec:analysis_ttGen}, the complete input space of a truth table is made up of all possible input combinations; the complete left-hand side of an exhaustive truth table. For schematics with large inputs and/or a large number of inputs, generating the complete input space is impractical. Instead, Issie only generates a subset of the input space; truth tables are limited to 1024 rows. This limit is defined as \codestyle{bitLimit = 10}in the \codestyle{Model}, as only 10 bits of input information may simulated ($2^10 = 1024$). If the input space (and therefore the truth table) exceeds this length, it is truncated. Input constraints are applied prior to truncation to ensure that the rows the user wants to view are guaranteed to be present in the returned truth table.
+As discussed in Section \ref{sec:analysis_ttGen}, the complete input space of a truth table is made up of all possible input combinations; the complete left-hand side of an exhaustive truth table. For schematics with large inputs and/or a large number of inputs, generating the complete input space is impractical. Instead, Issie only generates a subset of the input space; truth tables are limited to 1024 rows. This limit is defined as \codestyle{TTBitLimit = 10}in the \codestyle{Model}, as only 10 bits of input information may simulated ($2^{10} = 1024$). If the input space (and therefore the truth table) exceeds this length, it is truncated. Input constraints are applied prior to truncation to ensure that the rows the user wants to view are guaranteed to be present in the returned truth table.
+The limit of 1024 combinations for the input space was obtained by experimentally varying the set \codestyle{TTBitLimit} in the model. Requirement \textbf{E1.7} states that truth table generation should ideally take under 2 seconds, and at a maximum not more than 4. Other graphical operations in Issie must appear instantaneous; the time cut-off for this is 100ms. Therefore, the generation and view times for truth tables were measured for differing bit limits. The results obtained after testing four different values are presented in Table \ref{tab:bitlimit}. All measurements were made on a Macbook Air with an M1 CPU, generating a truth table for an 8-bit ALU which had a total input space of $2^{23}$. 
+
+One observation for both categories is that every time the bit limit increases by one, the reported times double. This indicates that the times are directly proportional to the number of rows in the truth table, and that table size is the main variable when considering performance in this scenario. A bit limit of 12 or higher was instantly rejected, as generation time was greater than 2 seconds (not optimal), and view time was almost 200 ms (unacceptable). The high view time meant that there was noticeable lag during graphical operations on the truth table, as well as when the dividerbar was dragged. While a bit limit of 11 is acceptable, with average generation time of 1.4 seconds, Robert Miller \cite{Miller1968ResponseTI} stated that response times under 1 second do not lose the user's attention. Therefore, if the choice was made to use a bit limit of 11, there would be a risk of losing the users attention. Additionally, Issie is run on a variety of devices, some which may be less powerful than the device used during the experiment. Considering that the view function time of 87ms is close to the 100ms mark, the decision was made to leave some performance headroom and choose a bit limit of 10, therefore limiting the size of truth tables to 1024 rows.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|l|l|l|l|l|}
+    \hline
+        Bit Limit & 9 & 10 & 11 & 12 \\ \hline
+        Avg. Generation Time (ms) & 390 & 702 & 1432 & 2819 \\ \hline
+        Avg. View Time (ms & 23 & 45 & 87 & 197 \\ \hline
+    \end{tabular}
+    \caption{Average Truth Table Generation and View times with varying Bit Limits}
+    \label{tab:bitlimit}
+\end{table}
 
 \subsubsection{First Truncation Method}
 The first approach taken to truncate the input space involved calculating exactly which input combinations could be generated, and subsequently only generating those. For each input $x_i$, three sets are considered: $S_i$ representing all of the possible values the $x_i$, $C_i$ representing all possible values of $x_i$ after applying input constraints, and $A_i$ representing how the distinct values the input could be allowed to have if the size of the Cartesian product was to be less than or equal to 1024. The sets $S_i$ and $C_i$ may be very large, therefore they are never generated. Instead, their sizes are inferred. The size of $M_i$ can be found by raising the width of $x_i$ to the power of 2, while the size of $C_i$ can be found by calculating the sum of the ranges of the constraints on $x_i$. In the \codestyle{TableInput} data structure, the \codestyle{MaxRowCount} field corresponds to the size of $M_i$, and the \codestyle{ConstrainedRowCount} field corresponds to the size of $C_i$.
@@ -247,7 +265,7 @@ The first step in finding the input space is to separate the numeric and algebra
 The resultant sequence represents the whole constrained input space, however it may be too large to evaluate and must therefore be truncated to 1024 rows. This is done by the \codestyle{Seq.truncate} function, which evaluates and returns the first 1024 elements in the sequence: the truncated numeric input space. Following this, any algebraic inputs are appended to each row to yield the complete left-hand side of the truth table.
 
 \subsubsection{Comparison of the two methods}
-The performance of each method was tested by generating a numeric truth table for an 8-bit ALU. The ALU has 5 inputs: A (8 bits), B (8 bits), F (3 bits), X (3 bits), and CIN (1 bit). The total number of bits is therefore 25, much greater than the bit limit of 10. This means that the complete input space comparises $2^{25} = 33,554,432$ combinations. Six readings were taken for each method, with the results shown in \ref{tab:ttGenPerformance}. On average, Method 2 is around 3ms faster than Method 1. An unpaired two-tailed t-test using a 95\% confidence interval was performed on the collected data, and found that this difference was not statistically significant. Furthermore, to the human eye 3ms is an intangible time difference \cite{Miller1968ResponseTI}. Therefore, from a user perspective, the choice of method is irrelevant.
+The performance of each method was tested by generating a numeric truth table for an 8-bit ALU. The ALU has 5 inputs: A (8 bits), B (8 bits), F (3 bits), X (3 bits), and CIN (1 bit). The total number of bits is therefore 23, much greater than the bit limit of 10. This means that the complete input space comparises $2^{23} = 8,388,608$ combinations. Six readings were taken for each method, with the results shown in \ref{tab:ttGenPerformance}. On average, Method 2 is around 3ms faster than Method 1. An unpaired two-tailed t-test using a 95\% confidence interval was performed on the collected data, and found that this difference was not statistically significant. Furthermore, to the human eye 3ms is an intangible time difference \cite{Miller1968ResponseTI}. Therefore, from a user perspective, the choice of method is irrelevant.
 
 \begin{table}[!ht]
     \centering
@@ -317,9 +335,16 @@ Figure \ref{fig:SelCases} shows four common examples of user selections, and the
     \end{itemize}
 \end{itemize}
 
+\subsection{Caching Strategy}
+The function \codestyle{makeSimDataSelected} is called in every iteration of the View function, as its return value (either a successfully built simulation or \codestyle{SimulationError}) is used to determine the colour, text and action of the generation button for partial selections. Repeatedly correcting the selected canvas on every call is wasteful if the selection has not changed, the result of the process is cached and re-used so long as the selected canvas state has not changed. The type definition for this cache can be found in Listing  \ref{lst:selcache}. When \codestyle{makeSimDataSelected} is called, the selected Canvas State is reduced and compared to the \codestyle{UncorrectedCanvas} field in the cache. If they are equal, this indicates the selection has not changed, so the corrected canvas and stored simulation result from the last call can be returned. If the selection has changed, then the selected canvas is corrected, and the cache is updated with the latest results.
 
-
-\bigskip
+\begin{lstlisting}[caption=Type Definition of Cache for selected logic ,frame=tlrb, language=FSharp, label=lst:selcache]{Name}
+type SelectionCache = {
+    UncorrectedCanvas: CanvasState
+    CorrectedCanvas: CanvasState
+    StoredResult: Result<SimulationData, SimulationError>
+}
+\end{lstlisting}
 \begin{figure} [h]
     \begin{subfigure}{0.48\textwidth}
         \centering
@@ -357,16 +382,6 @@ Figure \ref{fig:SelCases} shows four common examples of user selections, and the
     \label{fig:CanvasCorrectionStages}
 \end{figure}
 
-\subsection{Caching Strategy}
-The function \codestyle{makeSimDataSelected} is called in every iteration of the View function, as its return value (either a successfully built simulation or \codestyle{SimulationError}) is used to determine the colour, text and action of the \textit{Generate Truth Table} button for partial selections. Repeatedly correcting the selected canvas on every call is wasteful if the selection has not changed, therefore a cache is used. The type definition for this cache can be found in Listing  \ref{lst:selcache}. When \codestyle{makeSimDataSelected} is called, the selected Canvas State is reduced and compared to the \codestyle{UncorrectedCanvas} field in the cache. If they are equal, this indicates the selection has not changed, so the corrected canvas and stored simulation result from the last call can be returned. If the selection has changed, then the selected canvas is corrected, and the cache is updated with the latest results.
-
-\begin{lstlisting}[caption=Type Definition of Cache for selected logic ,frame=tlrb, language=FSharp, label=lst:selcache]{Name}
-type SelectionCache = {
-    UncorrectedCanvas: CanvasState
-    CorrectedCanvas: CanvasState
-    StoredResult: Result<SimulationData, SimulationError>
-}
-\end{lstlisting}
 % \section{Work Breakdown Structure}
 % As with any large project, a key stage in planning is to break it down into several manageable chunks. This has been done to some extent in the Requirements Capture (Chapter \ref{chap:requirements}), albeit at quite a high level. On the other hand, a Work Breakdown Structure (WBS) \cite{projectmanagement} defines the scope of the project and breaks the work down into components that can be scheduled, monitored, and controlled. This aids in assessing the complexity of certain tasks, therefore improving the overall distribution of resources (mainly time) to different tasks. The WBS for this project is shown in Figure \ref{fig:wbs} - it is rotated to make it more clear to the viewer. Red nodes in the WBS could be considered as \emph{Initiatives}, as they are long term (relative to the length of the project) objectives. Green nodes are rough equivalents to \emph{Epics}, and white/grey nodes are \emph{User Stories}. In some cases, user stories may have very short sub-tasks underneath them which need not necessarily be differentiated, but are done on the WBS for clarity's sake. User Stories which spawn sub-tasks are coloured purple, while sub-tasks requiring further elaboration are coloured yellow. 
 
@@ -461,14 +476,26 @@ Once all valid DC rows are found, these rows are used to reduce the existing tab
 \subsubsection{Stage 3: Assembling the Reduced Table and Recursive call}
 By combining the DC rows and remaining regular rows, the reduced truth table for this round of reduction can be obtained. However, one round of reduction can only add one Don't Care term to each row. However, certain truth tables may require multiple DC terms in each row to be fully reduced -- Figure\ref{fig:mux4table} is an advantage of this. Therefore, the reduction algorithm is called recursively on the reduced truth table. This chain of recursive calls continues until the reduced tables generated by two successive rounds are found to be equal, as this indicates that the table can be reduced no further. This fully reduced table is returned to the user for viewing.
 
+\newpage
+
 \section{Algebraic Truth Tables}
 Once a truth table has been generated, the user can reduce the number of rows in the table by changing inputs from numerical values to algebraic expressions. Section \ref{sec:algebra_types} discussed in detail the nature of algebraic operators and expressions in Issie, while Table \ref{tab:algebraops} in the Analysis and Design chapter explained what every operator the user may encounter means. Algebraic truth tables are obtained through \textit{Algebraic Simulation}; specific inputs selected by the user are fed to the underlying Fast Simulation as \codestyle{SingleTerm} algebraic expressions, and these expressions propagate through the simulation and are manipulated by operators. The outputs of the simulation are therefore also algebraic expressions, which summarise the output in terms of the input. 
 
-\subsection{Definition of the Algebraic System}
-A new system of algebra was created by this project for use in algebraic truth tables in Issie. The aim of the algebra is to clearly communicate the semantic meaning of the combinational logic function described by the schematic. These functions are traditionally defined using Boolean algebra, but this system was deemed unfit for use in algebraic truth tables. Simplified Boolean algebra can describe which operations are being performed on the inputs at a hardware level, but lacks a way to succinctly describe more advanced operations which consist of multiple regular Boolean operations. Arithmetic operations are an example of this. While Issie supports multi-bit inputs and wire buses in logic, traditional Boolean algebra assumes all input variables have a width of 1. Therefore it does not include operators for manipulating buses such as slicing or merging. Due to these reasons, the decision was made to define a new formal language (algebra) which would be a superset of Boolean algebra, adding support for arithmetic and multi-bit bus operations. Formal languages are a set of sequences, or strings over some finite vocabulary \cite{jäger_rogers_2012}, defined using a grammar. The F\fsharp implementation of the algebra differs slightly in some places from the more formal definition described below to allow for easier comprehension and simplification. The F\fsharp type definitions are described in Section \ref{sec:algebra_types}.
+\subsection{Definition of the Algebraic System} \label{subsec:algebradef}
+A new system of algebra was created by this project for use in algebraic truth tables in Issie. The aim of the algebra is to clearly communicate the semantic meaning of the combinational logic function described by the schematic. These functions are traditionally defined using Boolean algebra, but this system was deemed unfit for use in algebraic truth tables. Simplified Boolean algebra can describe which operations are being performed on the inputs at a hardware level, but lacks a way to succinctly describe more advanced operations which consist of multiple regular Boolean operations. Arithmetic operations are an example of this. While Issie supports multi-bit inputs and wire buses in logic, traditional Boolean algebra assumes all input variables have a width of 1. Therefore it does not include operators for manipulating buses such as slicing or merging. Due to these reasons, the decision was made to define a new formal language (algebra) which would be a superset of Boolean algebra, adding support for arithmetic and multi-bit bus operations. Formal languages are a set of sequences, or strings over some finite vocabulary , defined using a grammar. A formal grammar is defined as a quadruple $\langle \Sigma,NT,S,R \rangle$, where $\Sigma$ represents terminal symbols, $NT$ represents non-terminal symbols, $S$ represents a start symbol, and $R$ is a set of production rules which recursively transform non-terminals into terminals \cite{jäger_rogers_2012}. In 1956, Noam Chomsky \cite{chomsky} defined four types of grammars, which are arranged in a hierarchy. These can be summarised as:
+\begin{itemize}
+    \item[] \textbf{Unerestricted Grammars} (Type 0): Set of all language grammars that computably enumerable; i.e. can be recognised by a turing machine. 
+    \item[] \textbf{Context-Sensitive Grammars} (Type 1): Language grammars where the left-hand side of a production rule can contain multiple non-terminal and terminal symbols.
+     \item[] \textbf{Context-Free Grammars} (Type 2): Language grammars where the left-hand side of every production rule contains only one non-terminal.
+     \item[] \textbf{Regular Grammars} (Type 3): Grammars which can be processed by state machines, where each non-terminal can be considered as a 'state', and production rules are essentially state transition rules.
+\end{itemize}
+
+Each type in the hierarchy is a subset of the previous type; so for example all Type 3 grammars can be described with a Type 2 grammar, which can be described by a Type 1 and so forth. The algebra was initially defined as a context-free grammar, with each component in the schematic generating a single expression at each of its output ports from expressions at its input ports by applying production rules. This yielded an algebra which accurately described each transformation applied to the inputs. However, this algebra lacked any form of intelligent simplification: ways in which a generated expression could be reduced down to its most concise or informative representation. This was addressed by augmenting the set of production rules with \textbf{reduction rules}, which in turn led to the defined grammar becoming context-sensitive.
+
+\textit{Note:} The F\fsharp implementation of the algebra differs slightly in some places from the more formal definition described below to allow for easier comprehension and simplification. The F\fsharp type definitions are described in Section \ref{sec:algebra_types}.
 
 \subsubsection{Terminal Symbols}
-A terminal symbol is the simplest constituent of an algebraic expression, which cannot be sub-divided or simplified further. In the defined algebra, terminal symbols can be split into two categories. The first category represents the base value type which operations can be performed on. There are two terminal value types in the algebra; these are described in Table \ref{tab:terminals}. The second category consists of the operators which manipulate expressions. These are described in Table \ref{tab:algebraops}.
+A terminal symbol is the simplest constituent of an algebraic expression, which cannot be sub-divided or simplified further. In the defined algebra, terminal symbols can be split into two categories. The first category represents the base value type which operations can be performed on. There are two terminal value types in the algebra; these are described in Table \ref{tab:terminals}. The second category consists of the operators which manipulate expressions. These are described in Table \ref{tab:algebraops}. A key difference between this formal definition and the underlying implementation is the Append Operator. From the perspective of the user who will read the algebra/language, a binary operator which joins two expressions does exist. However, to aid easier reduction, in the F\fsharp implementation appened expressions are stored in a list of expressions, which is itself defined as an expression.
 \begin{table}[!ht]
     \centering
     \scalebox{0.9}{
@@ -498,15 +525,15 @@ A terminal symbol is the simplest constituent of an algebraic expression, which 
         Carry Of: $carry()$ & \codestyle{CarryOfOp} & Unary operator which signifies that the result is the single-bit carry-out from an arithmetic expression. This expression is the operand, which is situated in the parentheses. \\ \hline
         Bit Range: $[u:l]$ & \codestyle{BitRangeOp} & Unary operator with two parameters: an upper and lower bound. Indicates that a specified range of bits (inclusive) will be selected from the operand. \\ \hline
         Equals: $==$ & \codestyle{Equals} & Logical operator which checks for equivalence between some algebraic expression and a numeric value. \\ \hline
-        Append: $::$ & \codestyle{AppendOp} & Binary operator which joins the bits of the two input operands into one result whose width is the sum of the input widths. The left operand bits become the MSBs, right operand bits become LSBs. \\ \hline
+        Append: $::$ & Not in Code & Binary operator which joins the bits of the two input operands into one result whose width is the sum of the input widths. The left operand bits become the MSBs, right operand bits become LSBs. \\ \hline
     \end{tabular}}
     \caption{Terminal Operator Symbols}
     \label{tab:algebraops}
 \end{table}
 
-\subsubsection{Non-Terminal Symbols}
-Non-terminal symbols are constructs that appear within algebraic expressions which can eventually be simplified/replaced with terminal symbols.
-
+\subsubsection{Non-Terminal Symbols and Start Symbol}
+Non-terminal symbols are constructs that appear within algebraic expressions which, through the application of defined rules, can eventually be simplified/replaced with terminal symbols. In the F\fsharp implementation, arithmetic and boolean operators are not defined, as they are subsets of all binary operators.
+Grammars will generally build up into a tree-like structure, with the terminal symbols as its leaves and non-terminals as intermediate nodes in the tree. The root of this tree is known as the \textbf{start symbol}. In a formal grammar, it should be possible to arrive at a sequence of terminal symbols by repeatedly and/or recursively applying the defined production rules to the start symbol. In the case of the defined algebra, the start symbol is the \textit{expression}.
 \begin{table}[!ht]
     \centering
     \scalebox{0.9}{
@@ -515,26 +542,34 @@ Non-terminal symbols are constructs that appear within algebraic expressions whi
         \textbf{Symbol} & \textbf{Name In Code} & \textbf{Explanation} \\ \hline
         Binary Operator & \codestyle{BinaryOp} & Defines all binary operators (operators which take two operands) and can be substituted by any. \\ \hline
         Unary Operator & \codestyle{UnaryOp} & Defines all unary operators (operators which take one operand) and can be substituted by any. \\ \hline
+        Arithmetic Operator & Not in Code & Defines all operators involved in mathematics. \\ \hline
+        Boolean Operator & Not in Code & Defines all operators from Boolean algebra. \\ \hline
         Binary Expression & \codestyle{BinaryExp} & Defines an expression in which a binary operator acts on its operands. \\ \hline
         Unary Expression & \codestyle{UnaryExp} & Defines an expression in which a unary operator acts on its operands. \\ \hline
         Comparison Expression & \codestyle{ComparisonExp} & Defines an expression in which a comparison operator compares a symbol with a value \\ \hline
-        Expression & \codestyle{FastAlgExp} & Highest level non-terminal symbol, defines all expressions in the simulation. \\ \hline
+        Expression & \codestyle{FastAlgExp} & Highest level non-terminal symbol (\textbf{start symbol}), defines all expressions in the simulation. \\ \hline
     \end{tabular}}
     \caption{Non-Terminal Symbols}
     \label{tab:nonterminals}
 \end{table}
 
-\subsubsection{Production Rules and Start Symbol}
-Production rules in grammars have the form $\alpha \rightarrow \beta$, understood as $\alpha$ may be replaced by $\beta$, where $\alpha$ and $\beta$ are sequences comprising symbols from the terminal and non-terminal set of symbols \cite{jäger_rogers_2012}. These production rules can be described in \textit{Backus-Naur Form} (BNF); this is a format for presenting grammars often used when defining programming languages. In BNF, non-terminal symbols, which are called \textit{metalinguistic variables} are enclosed in brackets to differentiate them from terminal symbols. The symbol $::=$ indicates \textit{metalingustic equivalence}: whatever is to the left of the symbol can be substituted by whatever is to the right. The symbol $|$ implies a choice of equivalences (akin to a logical OR) -- i.e. something can be substituted by option 1 or option 2. Finally, concatenation of symbols (linking) is achieved by placing them next to one another \cite{bnf}. The production rules for the algebra, defined in BNF are: 
+\subsubsection{Production Rules}
+Generally, production rules in grammars have the form $\alpha \rightarrow \beta$, understood as $\alpha$ may be replaced by $\beta$, where $\alpha$ and $\beta$ are sequences comprising symbols from the terminal and non-terminal set of symbols \cite{jäger_rogers_2012}. In context-free grammars, $\alpha$ represents only one non-terminal symbol. Production rules can be described in \textit{Backus-Naur Form} (BNF); this is a format for presenting grammars often used when defining programming languages. In BNF, non-terminal symbols, which are called \textit{metalinguistic variables} are enclosed in brackets to differentiate them from terminal symbols. The symbol $::=$ indicates \textit{metalingustic equivalence}: whatever is to the left of the symbol can be substituted by whatever is to the right. The symbol $|$ implies a choice of equivalences (akin to a logical OR) -- i.e. something can be substituted by option 1 or option 2. Finally, concatenation of symbols (linking) is achieved by placing them next to one another \cite{bnf}. 
+
+The production rules for the algebra, defined in BNF are: 
 
 %\textit{Note: the symbol} \textbf{|} \textit{is used for bitwise Or, but is also used in BNF. Therefore, the bitwise Or symbol will be enclosed in quotes when used in the definition} \textbf{"|"}. 
 \setlength{\grammarparsep}{0.25cm}   % vertical distance between production rules
 \setlength{\grammarindent}{4.5cm}
 \begin{center}
 \begin{grammar}
-    <binary operator> ::= "+" \alt "-" \alt "\&" \alt "|" \alt "\bigoplus"
-
     <unary operator> ::= "-" \alt "\sim" \alt "carry()" \alt "[u:l]"
+    
+    <arithmetic operator> ::= "+" \alt "-"
+    
+    <boolean operator> ::= "\&" \alt "|" \alt "\bigoplus"
+    
+    <binary operator> ::= <arithmetic operator> \alt <boolean operator> \alt "::"
 
     <comparison operator> ::= "=="
     
@@ -547,22 +582,218 @@ Production rules in grammars have the form $\alpha \rightarrow \beta$, understoo
     <expression> ::= "variable" \alt "number" \alt <binary expression> \alt <unary expression> \alt <comparison expression>
 \end{grammar}
 \end{center}
-Grammars will generally build up into a tree-like structure, with the terminal symbols as its leaves and non-terminals as intermediate nodes in the tree. The root of this tree is known as the \textbf{start symbol}. In a formal grammar, it should be possible to arrive a sequence of terminal symbols by repeatedly and/or recursively applying the defined production rules to the start symbol. In the case of the defined algebra, the start symbol is the \textit{expression}.
-% \begin{bnf*}
-%     \bnfprod{binary operator}
-%         {\bnfts{+} \bnfor \bnfts{-} \bnfor \bnfts{\&} \bnfor \bnfts{"|"} \bnfor \bigoplus}\\
-%     \bnfprod{unary operator}
-%         {\bnfts{-} \bnfor \sim \bnfor \bnfts{carry()} \bnfor \bnfts{[u:l]}}\\
-%     \bnfprod{comparison operator}
-%         {==} \\
-%     \bnfprod{binary expression} {\bnfpn{expression} \bnfsp \bnfpn{binary operator} \bnfsp \bnfpn{expression}}
-%     \bnfprod{unary expression} {\bnfpn{unary operator} \bnfsp \bnfpn{expression}} \\
-%     \bnfprod{comparison expression} {\bnfpn{expression} \bnfsp \bnfpn{comparison operator} \bnfsp \bnfts{number}} \\
-%     \bnfprod{expression}
-%         {\bnfts{variable} \bnfor \bnfts{number} \bnfor \bnfpn{binary expression}}
-%         \bnfmore{\bnfor \bnfpn{unary expression} \bnfor \bnfpn{comparison expression}}
-        
-% \end{bnf*}
+
+\subsection{Reduction Rules} \label{subsec:redrules}
+Production rules whose left-hand sides consist of multiple symbols are a part of context-sensitive grammars. The introduction of these rules allows for specific cases to be reduced into equivalent representations which are more informative and concise. Some of these reductions are purely syntactical; one arrangement of symbols can be simplified into another. However, other reduction rules are contingent on the underlying values of specific symbols, or equivalence between the values of symbols. In these situations, the conditions under which the reduction rule can be applied are described underneath the rule.
+
+\subsubsection{Catching Double Negation and Inversion}
+Double negation and inversion cancel out -- applying the negation or inversion operator twice to an expression simply returns the initial expression
+\begin{center}
+\begin{grammar}
+    "-" "-" <expression> ::= <expression>
+    
+    "\sim" "\sim" <expression> ::= <expression>
+\end{grammar}
+\end{center}
+\subsubsection{Arithmetic Interpretation of Xor and Not}
+The Xor (bitwise check for exclusivity) and Not (bitwise inversion) operations have alternative interpretations in arithmetic. Xor can be interpreted as addition, meaning that the transformation $A \bigoplus B \rightarrow A + B$ should be applied. Performing a bitwise Not to invert the bits of a number is the first step in 2's complement negation, with the second step being to add 1. Therefore, when a bit inversion of an expression is used in arithmetic operations, it should be interpreted as the negative of the expression, minus one. This yields the transformation: $A + \sim B \rightarrow A + (- B - 1)$. The transformed value can then be simplified into $A - B - 1$.
+\setlength{\grammarindent}{2.5cm}
+\begin{center}
+    \begin{grammar}
+    ""<expression> "\bigoplus" <expression> ::= <expression> "\+" <expression>
+    
+    ""<expression> "+" ("\sim" <expression>) ::= <expression> "+" ("-" <expression> "-" "1")
+\end{grammar}
+\end{center}
+
+\subsubsection{Merging Bit Ranges on Append}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{05.ImpPlan/splitmerge.png}
+    \caption{Splitting and Merging}
+    \label{fig:splitmerge}
+\end{figure}
+Issie supports splitting multi-bit inputs into separate buses, as well as merging buses together in resultant wider bus. This is achieved through the \textit{MergeWires} and \textit{SplitWire} components. When an expression is split, the unary Bit Range operator is applied to the expression -- this operator itself features two parameters: the upper and lower bound of the range. When expressions are joined (appended) together, the append operator performs the join. Figure \ref{fig:splitmerge} shows a circuit which splits a 4-bit input, and then immediately joins the two halves back together. Under naive algebraic simulation the output would yield the following expression:
+\begin{align}
+    A[3:2] :: A[1:0]
+\end{align}
+However, this is simply equivalent to the initial input expression $A$. This pattern, where unary expressions consisting of adjacent bit ranges applied to the same underlying expression are appended, is recognised and reduced appropriately. This rule can be defined in general as:
+\begin{grammar}
+    (<expression> "[u1:l1]") "::" (<expression> "[u2:l2]") ::= <expression> "[u1:l2]"
+    
+    \textrm{if both instances of <expression> are equal and if "l1 = u2 + 1"}
+\end{grammar}
+
+An example of how well the rule generalises is also provided below, with the following case being caught and reduced as shown. For context, the variables $A$ and $B$ represent inputs which are each 8 bits wide.
+\begin{align}
+    (A + B)[7:6] :: (A + B)[5:4] :: (A + B)[3:1] \rightarrow (A + B)[7:1]
+\end{align}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{05.ImpPlan/bitwise.png}
+    \caption{Circuit for Bitwise And}
+    \label{fig:bitwiseand}
+\end{figure}
+
+\subsubsection{Recognising Bitwise Operations}
+While Issie allows multi-bit inputs, as of the time of writing it does not feature any library components for performing bitwise Boolean operations. Therefore, users must manually split both multi-bit buses into their constituent bits using \textit{SplitWire} components, perform the Boolean operation on each pair of bits, and assemble the results in order again using \textit{MergeWires} components. Figure \ref{fig:bitwiseand} shows the schematic that must be built to calculate the bitwise And between two 4-bit inputs $A$ and $B$. The left-hand side of expression \ref{equ:bitwise} is what would initially be produced under simulation: the constituent bits of each input being operated on and the results being appended together. The right-hand side is the result of applying the reduction rule: correct recognition of the bitwise operation on expressions $A$ and $B$.
+
+\begin{align} \label{equ:bitwise}
+    (A[3] \& B[3]) :: (A[2] \& B[2]) :: (A[1] \& B[1]) :: (A[0] \& B[0]) \rightarrow A \& B
+\end{align}
+
+In order for this simplification to take place, successive nested binary append operators must be flattened into a list for analysis to take place. This step is unnecessary in the F\fsharp implementation as appended expressions are already stored as a list. In the current formal system, a list of appended expressions can be defined. There is no need for an empty list terminal, as it is impossible to append nothing.
+\setlength{\grammarindent}{4.5cm}
+\begin{grammar}
+    <expression list> ::= <expression> \alt <expression> "::" <expression list>
+\end{grammar}
+
+Using the above definition of an expression list, the following binary expression: $\langle \textrm{expression} \rangle \textrm{\textbf{::}}\langle \textrm{expression} \rangle$, where either constituent expression may be of the same form (i.e. nested appends), can be expanded into a flat ordered list of expressions that are to be appended to one another. This list can be analysed to detect bitwise operations on expressions. The reduction rule for this case is described below.
+\setlength{\grammarindent}{0.5cm}
+\begin{grammar}
+    ((<expression> "[u1:l1]") <boolean operator> (<expression> "[u1:l1]")) "::"  ((<expression> "[u2:l2]") <boolean operator> (<expression> "[u2:l2]")) "::" ((<expression> "[u3:l3]") <boolean operator> (<expression> "[u3:l3]")) ::= <expression> <boolean operator> <expression>
+    
+    \textrm {if all instances of <expression> are equal and if $u_i$ equals $l_i$}
+    
+    \textrm{and if $u_{0..n-1}$ are successive, with the expression having width $n$}
+\end{grammar}
+
+\subsubsection{Boolean Simplification Rules}
+In Boolean algebra, there exist certain identities which allow for the simplification of Boolean expressions. These are described in Figure \ref{fig:boolalgidentities}. These simplification rules have been implemented in the algebraic system as reduction rules; the letters $A$,$B$, and $C$ represent any valid algebraic expression, while numbers 0 and 1 represent LOW and HIGH values rather than the actual values of 0 and 1. This distinction is important as numerical values in Issie can have widths greater than one. For example, Rules 3 and 4 for 8-bit algebraic variables would be: $A \& 0\textrm{x}00 = 0\textrm{x}00$ and $A \& 0\textrm{x}FF = 0\textrm{x}FF$ respectively.
+Rule 9 (double inversion) has already been described. It should be noted that the symbol "$+$" in Figure \ref{fig:boolalgidentities} means OR rather than addition, and the dot means AND. For rules involving commutative operations, the alternate case is also covered in the implementation. For example,  $A \& 0$ and $0 & A$ will both evaluate to $0$ under Rule 3.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{05.ImpPlan/BooleanLaws.png}
+    \caption{Boolean Algebra Identities \cite{boolalg_laws}}
+    \label{fig:boolalgidentities}
+\end{figure}
+
+In addition to the above rules, expressions which involve performing XOR with either LOW or HIGH values are also reduced. The cases for reduction are shown below; $A$ represents any valid algebraic expression.
+\begin{align*}
+    A \oplus 0 = A
+\end{align*}
+\begin{align*}
+    A \oplus 1 = \sim A
+\end{align*}
+
+%\setlength{\grammarindent}{1.5cm}
+% \begin{grammar}
+%     <expression> "|" "number" | "number" "|" <expression> ::= <expression>
+    
+%     \textrm{if "number" equals "0"}
+    
+%     <expression> "|" "number" | "number" "|" <expression> ::= "1"
+    
+%     \textrm{if "number" equals "1"}
+    
+%     <expression> "\&" "number" | "number" "\&" <expression> ::= "0" 
+    
+%     \textrm{if "number" equals "0"}
+    
+%     <expression> "\&" "number" | "number" "\&" <expression> ::= <expression>
+    
+%     \textrm{if "number" equals "1"}
+    
+%     <expression> "|" <expression> ::= <expression>
+    
+%     \textrm{if both instances of <expression> are equal}
+    
+%     <expression> "|" ("\sim" <expression>) ::= "1"
+    
+%     \textrm{if both instances of <expression> are equal}
+    
+%     <expression> "\&" <expression> ::= <expression>
+    
+%     \textrm{if both instances of <expression> are equal}
+    
+%     <expression> "\&" ("\sim" <expression>) ::= "0"
+    
+%     \textrm{if both instances of <expression> are equal}
+
+% \end{grammar}
+
+\subsubsection{Arithmetic Expression Simplification}
+While arithmetic expressions are not strictly defined in the algebra, with the more generic binary expressions being used, a possible definition of an arithmetic expression is shown below. This is the same definition as the one used for a binary expression, with the exception of a tighter set of operators being used. 
+\setlength{\grammarindent}{4.5cm}
+\begin{grammar}
+    <arithmetic expression> ::= <expression> <arithmetic operator> <expression>
+\end{grammar}
+As arithmetic expressions are themselves a type of expression, there is the possibility that other arithmetic expressions may be nested within an arithmetic expression. An example of this is shown on the left-hand side of expression \ref{equ:nestedarith}, where numerous arithmetic equations have been nested. The issue with this nesting is that the arithmetic is not in its simplest form, which is shown on the right-hand side. $B$ and $-B$ should cancel out, and the two numbers in the expression should be combined into one.
+
+\begin{align} \label{equ:nestedarith}
+    ((A + B) - (((B + 1) + C) - 2)) \rightarrow ((A - C) + 1)
+\end{align}
+
+This process of arithmetic simplification has multiple steps. First, the structure of nested arithmetic expressions is recursively flattened into a list of arithmetic terms. These arithmetic terms in this flattened list are of the form $\langle expression \rangle$ if they are positive and $\langle - expression \rangle$ if they are negative. Algorithm \ref{alg:flatten} explains how nested arithmetic can be flattened. The flattening algorithm is recursively called on the left and right operands of arithmetic expressions to produce a list. If the operator is subtraction, the values of the right list are negated element-wise. The two resultant lists are joined. Additionally, if a bit-inversion ($\sim A$) is recognised, it is converted into the arithmetically equivalent expression $-1 - A$; this expression is then flattened further in case $A$ itself is an arithmetic expression. If the expression matches none of these cases, then it is at its flattest, and is therefore returned in a list by itself.
+
+Applying the described flattening process to \ref{equ:nestedarith}, results in the list of expressions on the left-hand side of expression \ref{equ:arithlist}. Matching pairs of positive and negative expressions and combining numerical values yields the list on the right-hand side. The expressions in this simplified list can then be re-assembled into binary arithmetic expressions.
+
+\begin{align} \label{equ:arithlist}
+    [A,B,-B,-1,-C,+2] \rightarrow [A,-C,1]
+\end{align}
+
+\begin{algorithm}
+\caption{Algorithm for Flattening Nested Arithmetic}\label{alg:flatten}
+\begin{algorithmic}
+\Procedure{Flatten}{$expression$}
+    \If{$expression$ of form $(expression1 + expression2)$}
+        \State $left \gets \Call{Flatten}{expression1}$
+        \State $right \gets \Call{Flatten}{expression2}$
+        \State \Return \Call{Append}{$left,right$}
+    \ElsIf{$expression$ of form $(expression1 - expression2)$}
+        \State $left \gets \Call{Flatten}{expression1}$
+        \State $rtemp \gets \Call{Flatten}{expression2}$
+        \State $right \gets \Call{NegateList}{rtemp}$
+        \State \Return \Call{Append}{$left,right$}
+    \ElsIf{$expression$ of form $\sim innerexp$}
+        \State \Return \State \Return \Call{Flatten}{$-1 - innerexp$}
+    \Else
+        \State \Return [$expression$]
+    \EndIf
+\EndProcedure
+
+\Procedure{NegateList}{$listOfExp$}
+    \For{$expression$ in $listOfExp$}
+        \If{$expression$ of form $(- innerexp)$}
+            \State $listOfExp[i] \gets innerexp$
+        \Else
+            \State $listOfExp[i] \gets expression$
+        \EndIf
+    \EndFor
+    \State \Return $listOfExp$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Full Adder Detection}
+In complex Issie designs, which often involve working with multi-bit buses of varying widths, most arithmetic operations in logic will be implemented using the \textit{N-bits Adder} component. This component has three input ports: A, B, and Cin; and two output ports: SUM and COUT. The SUM port outputs the sum of the three inputs, while the COUT port outputs the carry-out of the addition. This arithmetic can be described by the Addition operator and the CarryOf operator. However, users can also create their own full adder component; this is a 1-bit adder. As this is implemented purely with logic gates, the addition and carry operators cannot be generated during the production phase. They must instead be inferred in the reduction phase. The schematic for a full adder is shown in Figure \ref{fig:fulladd}; full adders are built by combining two half adders (Figure \ref{fig:halfadd}). The sum of a full adder is simply $A \oplus B \oplus Cin$; XOR is therefore reduced to addition. Inferring the Carry is slightly more challenging. The carry-out from a half adder is simply $A \& B$ -- this is too general of an expression to reduce to $carry(A + B)$. Doing so would result in multiple false-positives for carry detection. However, the carry-out from a full adder is slightly more complex, therefore a reduction rule for it can be written. Two reduction rules are required for recognising full adders, one for the sum and one for the carry:
+\begin{align}
+    A \oplus B \rightarrow A + B
+\end{align}
+\begin{align}
+    (C \& (A + B)) | (A \& B) \rightarrow carry(A + B + C)
+\end{align}
+
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{05.ImpPlan/halfadd.png}
+         \caption{Half Adder Circuit}
+         \label{fig:halfadd}
+     \end{subfigure}
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{05.ImpPlan/fulladd.png}
+         \caption{Full Adder Circuit}
+         \label{fig:fulladd}
+     \end{subfigure}
+        \caption{Adder Circuits}
+        \label{fig:adders}
+\end{figure}
+
 \subsection{Implementing Algebra}
 
 In order to enable algebraic simulation, the Fast Simulation code was extended by the project to support algebraic inputs and reduction. 
@@ -576,39 +807,75 @@ type FData = | Data of FastData | Alg of FastAlgExp
 \end{lstlisting}
 
 When the Fast Simulation is built, all components in the schematic are placed in a specific order which allows them to be reduced. This reduction process involves propagating values from the input ports of a component to its output ports, which are propagated to the input ports of the next component in line. This is repeated until the end of the list is reached.
-The function responsible for propagating these values is \codestyle{fastReduce}. It consists of a large Pattern Match expression, with defined behaviour for how each component transforms its input values into output values. Previously, the values at the input ports could only be \codestyle{FastData}, however after the change in definition they could also be algebraic expressions. Therefore, the defined behaviour for every component specified in \codestyle{fastReduce} had to be extended to support algebraic expressions. Table \ref{tab:fastReduce} summarises the extensions to \codestyle{fastReduce} which enabled algebraic simulation. Some components have multiple cases (a '-' signifies the default case) -- this is because certain algebraic relationships can be inferred during the reduction algorithm and the correct result is therefore propagated. An example of this is when one of the inputs to an \textit{NbitsAdder} component is a expression with a not operator, and the carry-in is 1. The Not operator symbolises a bit-inversion, so adding 1 to that results in a 2's complement representation of the expression the Not operator was applied to. This means that the adder is now performing subtraction: $A + \Bar{B} + 1 = A - B$. The advantage of this approach is that it is extensible; the algebraic simulation can be made smarter by simply programming in more specific cases. There are specific cases where algebraic simulation has not been implemented, such as for sequential components or for when algebra is passed to the select port of a multiplexer. In these cases, an \codestyle{AlgebraNotImplemented} exception, which contains a \codestyle{SimulationError} is raised. This error is then returned to the user.
+The function responsible for propagating these values is \codestyle{fastReduce}. It consists of a large Pattern Match expression, with defined behaviour for how each component transforms its input values into output values. Previously, the values at the input ports could only be \codestyle{FastData}, however after the change in definition they could also be algebraic expressions. Therefore, the defined behaviour for every component specified in \codestyle{fastReduce} had to be extended to accommodate algebra.
 
-% \begin{table}[!ht]
-%     \centering
-%     \scalebox{1}{
-%     \begin{tabular}{|m{2cm}|m{4cm}|m{8cm}|}
-%     \hline
-%         \textbf{Component} & \textbf{Case} & \textbf{Defined Behaviour} \\ \hline
-%         Not & - & Apply the unary Not operator to the algebraic expression. \\ \hline
-%         BusSelection & - & Apply the unary BitRange operator to the expression based on width and LSB supplied. \\ \hline
-%         BusCompare & - & Apply the comparison operator to the expression, comparing it to the supplied value. \\ \hline
-%         \shortstack{And, Or,\\ Xor} & - & Apply the relavent binary operator to both expressions \\ \hline
-%         \shortstack{Nand, Nor,\\ Xnor} & - & Apply the the binary operator for the uninverted versions of the gates, and then apply the unary Not operator to the result. \\ \hline
-%         \multirow{2}{*}{\shortstack{Mux2, Mux4\\ Mux8}} & Data inputs are algebra or numeric, Select input is numeric & If the select input is 0, propagate the expression/number connected to port 0. If select input is 1, propogate the expression/number connected to port 1 and so on… \\ \cline{2-3}
-%         ~ & Select input is algebra & Algebra not allowed at select port of multiplexer. Raise AlgebraNotImplemented exception. \\ \hline
-%         \multirow{2}{*}{\shortstack{Demux2,\\ Demux4,\\ Demux8}} & Data input is algebra or numeric, Select input is numeric & Propagate the expression/value to the correct output corresponding to the Select value. \\ \cline{2-3}
-%         ~ & Select input is algebra & Algebra not allowed at select port of demultplexer. Raise AlgebraNotImplemented exception. \\ \hline
-%         \multirow{3}{*}{NbitsAdder} &  The carry-in is 1, and one of the inputs is an expression with a Not operator & This is subtraction, apply the binary Subtraction operator to the two inputs. \\ \cline{2-3}
-%         ~ & Out of the three inputs, two are numeric, one is algebraic & Add the two numeric values together, and then apply the binary Add operator to the expression and the sum. \\ \cline{2-3}
-%         ~ & - & Apply the binary Add operator to two inputs, and then apply a second Add operator to the first expression and the third input. \\ \hline
-%         \multirow{2}{*}{NbitsXor} & One input is algebra, the other is -1. & This is bit inversion, apply the unary Not operator to the input. \\ \cline{2-3}
-%         ~ & - & Apply the binary Xor operator to the inputs. \\ \hline
-%         \multirow{3}{*}{SplitWire} & Input is an algebraic expression with a BitRange operator & Change the values in the bit range operator according to which bits are going to output ports 0 and 1. \\ \cline{2-3}
-%         ~ & Input is an algebraic expression with a Not opeartor & Apply the BitRange operator to the expression inside the Not operator, as bit ranges bind closer. \\ \cline{2-3}
-%         ~ & - & Apply the unary BitRange operator to the expression, with different ranges for output ports 0 and 1. \\ \hline
-%         \multirow{3}{*}{MergeWires} & Both inputs are append expressions (a list of appened expressions) & Join the two lists in the correct order, and then check if any BitRanges can be joined. \\ \cline{2-3}
-%         ~ & One of the inputs is an append expression & Add the new element to the head or tail of the list depending on the order, and then check if any BitRanges can be merged. \\ \cline{2-3}
-%         ~ & - & Put the two inputs in a list together in the correct order, and check if any BitRanges can be merged. \\ \hline
-%         \shortstack{Any other\\ components} & - & These are sequential components which should not accept algebra, raise an AlgebraNotImplemented exception. \\ \hline
-%     \end{tabular}}
-%     \caption{New additions to the defined behaviour for each components in \codestyle{fastReduce}}
-%     \label{tab:fastReduce}
-% \end{table}
+Algebraic simulation consists of two stages. The first is the \textbf{production} stage, where a complex algebraic expression is produced by the \codestyle{fastReduce} function. Each algebraic input into the overall logic is represented as a single variable (\codestyle{SingleTerm}). As mentioned previously, \codestyle{fastReduce} defines a mapping from the expressions at the input ports of a component to expressions/data at its output ports. These output expressions are then propagated to the input ports of the next connected component. Figure \ref{fig:annotatealgebra} is an annotated schematic which shows how algebraic expressions propagate through components, growing in complexity as they pass through each component. At the completion of the production stage, every output of the simulation has an algebraic expression associated with it. While behaviour has been defined for all combinational components, algebra is not supported at select (SEL) ports of multiplexers, demultiplexers, and decoders. This is by design; as the algebraic expressions resulting from algebra at a SEL port would be long, unwieldy, and would not provide much insight into what the component actually does. Furthermore, inputs into SEL ports are often control signals for circuit behaviour, and therefore different cases ought to be separated out in the truth table. In these cases, an \codestyle{AlgebraNotImplemented} exception, which contains a \codestyle{SimulationError} explaining why algebraic simulation cannot take place is raised. Once caught, this exception is handled by showing the simulation error to the user. When the user designates an input as algebraic in the popup window, one case with the given input set as algebraic is simulated. If that simulation raises an exception, the user is prevented from applying that set of algebraic inputs. Table \ref{tab:fastReduce} summarises the mappings for algebra defined \codestyle{fastReduce} which produce expressions at output ports.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{05.ImpPlan/annotations.png}
+    \caption{Annotated Schematic showing propagation of Algebra}
+    \label{fig:annotatealgebra}
+\end{figure}
+
+\begin{table}[!ht]
+    \centering
+    \scalebox{0.9}{
+    \begin{tabular}{|m{2cm}|m{4cm}|m{8cm}|}
+    \hline
+        \textbf{Component} & \textbf{Case} & \textbf{Defined Behaviour} \\ \hline
+        Not & - & Apply the unary Not operator to the algebraic expression. \\ \hline
+        BusSelection & - & Apply the unary BitRange operator to the expression based on width and LSB supplied. \\ \hline
+        BusCompare & - & Apply the comparison operator to the expression, comparing it to the supplied value. \\ \hline
+        \shortstack{And, Or,\\ Xor} & - & Apply the relavent binary operator to both expressions \\ \hline
+        \shortstack{Nand, Nor,\\ Xnor} & - & Apply the the binary operator for the uninverted versions of the gates, and then apply the unary Not operator to the result. \\ \hline
+        \multirow{2}{*}{\shortstack{Mux2, Mux4\\ Mux8}} & Data inputs are algebra or numeric, Select input is numeric & If the select input is 0, propagate the expression/number connected to port 0. If select input is 1, propogate the expression/number connected to port 1 and so on… \\ \cline{2-3}
+        ~ & Select input is algebra & Algebra not allowed at select port of multiplexer. Raise AlgebraNotImplemented exception. \\ \hline
+        \multirow{2}{*}{\shortstack{Demux2,\\ Demux4,\\ Demux8}} & Data input is algebra or numeric, Select input is numeric & Propagate the expression/value to the correct output corresponding to the Select value. \\ \cline{2-3}
+        ~ & Select input is algebra & Algebra not allowed at select port of demultiplexer. Raise AlgebraNotImplemented exception. \\ \hline
+        \multirow{2}{*}{Decode4} & Data input is algebra or numeric, Select input is numeric & Propagate the expression/value to the correct output corresponding to the Select value. \\ \cline{2-3}
+        ~ & Select input is algebra & Algebra not allowed at select port of decoder. Raise AlgebraNotImplemented exception. \\ \hline
+        NbitsAdder & - & Apply the binary Add operator to two inputs, and then apply a second Add operator to the first expression and the third input. \\ \hline
+        \multirow{2}{*}{NbitsXor} & One input is algebra, the other is -1. & This is bit inversion, apply the unary Not operator to the input. \\ \cline{2-3}
+        ~ & - & Xor on multi-bit inputs is usually interpreted as addition, so apply the Add operator to the two operands. \\ \hline
+        \multirow{3}{*}{SplitWire} & Input is an algebraic expression with a BitRange operator & Change the values in the bit range operator according to which bits are going to output ports 0 and 1. \\ \cline{2-3}
+        ~ & Input is an algebraic expression with a Not opeartor & Apply the BitRange operator to the expression inside the Not operator, as bit ranges bind closer. \\ \cline{2-3}
+        ~ & - & Apply the unary BitRange operator to the expression, with different ranges for output ports 0 and 1. \\ \hline
+        \multirow{3}{*}{MergeWires} & Both inputs are append expressions (a list of appened expressions) & Join the two lists in the correct order, and then check if any BitRanges can be joined. \\ \cline{2-3}
+        ~ & One of the inputs is an append expression & Add the new element to the head or tail of the list depending on the order, and then check if any BitRanges can be merged. \\ \cline{2-3}
+        ~ & - & Put the two inputs in a list together in the correct order, and check if any BitRanges can be merged. \\ \hline
+        \shortstack{Any other\\ components} & - & These are sequential components which should never receive, nor accept algebra, raise an AlgebraNotImplemented exception. \\ \hline
+    \end{tabular}}
+    \caption{New additions to the defined behaviour for each component in \codestyle{fastReduce}}
+    \label{tab:fastReduce}
+\end{table}
+
+The second stage is the \textbf{reduction} stage. In this stage, the expressions associated with the simulation outputs are recursively reduced using the reduction rules defined in Section \ref{subsec:redrules}. This is achieved by a recursive pattern match on the expression to be simplified -- this pattern match is implemented in the function \codestyle{evalExp}. In the example presented in Figure \ref{fig:annotatealgebra}, the result of the production stage at the one output node of the simulation was $(A | B) \& (A | C)$. The reduction stage matches this expression against Boolean Simplification Rule 9 in Figure \ref{fig:boolalgidentities}, and reduces it to $A|(B\&C)$. The specific case in the pattern match in \codestyle{evalExp} which applies this reduction rule is shown in Listing \ref{lst:boolsimp}.
+
+\begin{lstlisting}[caption=Case in pattern match which implements the reduction rule for Boolean Simplification Rule 9,frame=tlrb, language=FSharp, label=lst:boolsimp]{Name}
+// (A OR B) AND (A OR C) = A OR (B AND C)
+    | BinaryExp(e1,BitOrOp,e2), BinaryExp(e3,BitOrOp,e4) ->
+        if e1 = e3 then
+            BinaryExp(e1,BitOrOp,BinaryExp(e2,BitAndOp,e4))
+        else if e1 = e4 then
+            BinaryExp(e1,BitOrOp,BinaryExp(e2,BitAndOp,e3))
+        else if e2 = e3 then
+            BinaryExp(e2,BitOrOp,BinaryExp(e1,BitAndOp,e4))
+        else if e2 = e4 then
+            BinaryExp(e2,BitOrOp,BinaryExp(e1,BitAndOp,e3))
+        else
+            BinaryExp (left,BitAndOp,right)
+\end{lstlisting}
+
+\subsubsection{Implementation of Arithmetic Simplification}
+Arithmetic simplification is one of the most important reduction rules in the algebraic system. Not only does it remove redundant expressions and numeric values from the output expression, but it also converts bit inversions into subtractions. The first step of arithmetic simplification is the flattening of nested arithmetic into a list of expressions. The algorithm for this was described in Algorithm \ref{alg:flatten}, and is implemented in the F\fsharp function \codestyle{flattenNestedArithmetic}. The next step is to remove redundancies in the list; this includes cancelling out positive and negative instances of expressions and collecting numeric terms. This is achieved by folding the list of expressions using two states. The first state is an integer; this is used to collect numeric values. If a positive number is encountered in the list, the number is added to the running state. If a negative number is encountered, its value is subtracted from the running state. The second state is an expression counter, implemented as a \codestyle{Map<FastAlgExp,int>}. When an expression is encountered in the list, its value in the Map is incremented. If the negative version of the expression is encountered, its value in the Map is decremented. At the conclusion of the \codestyle{List.fold}, the first state represents the final numeric value, while the second state contains the coefficient for each expression in the list. This information is then reassembled into a simplified arithmetic expression. Figure \ref{fig:arithsimp} summarises the arithmetic simplification process using an example, showing the value of specific data structures at different points in the process.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{05.ImpPlan/arithsimp.pdf}
+    \caption{Process for Arithmetic Simplification with Example}
+    \label{fig:arithsimp}
+\end{figure}
 
 % Alongside interpretation of cases during algebraic reduction, informative algebraic relationships are also calculated once the simulation is completed by evaluating the expressions using the \codestyle{evalExp} function. This function recursively evaluates the sub-expressions which make up the often large and complex output expression. The cases that are caught and evaluated by this function are:
 % \begin{enumerate}

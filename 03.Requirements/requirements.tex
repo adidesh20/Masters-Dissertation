@@ -1,7 +1,9 @@
-\chapter{Requirements Capture} \label{chap:requirements}
-\section{Requirements for Logic Visualisation}
+\chapter{Project Requirements} \label{chap:requirements}
+This chapter specifies the comprehensive set of requirements for the updated version of Issie delivered by this project, as well as any accompanying documentation. These requirements build up to a more formal specification that is representative of the project aims, and takes into account the prior evaluation of the current version of Issie. Upon completion of the project, the deliverables will be evaluated against these requirements to ascertain the extent to which the project was successful.
+
+\section{Requirements for Combinational Logic Visualisation}
+The primary purpose of this project is to develop new ways for visualising combinational logic in Issie. These requirements specify the features that these novel visualisation methods should have, as well as constraints on their operation (e.g. required performance). Requirements can either be essential (\textbf{Ex}) or desirable (\textbf{Dx}). Essential requirements must be fulfilled for the project to be considered successful.
 \subsection*{Essential Requirements}
-The improved version of Issie delivered by this project must be able to:
 \begin{itemize}
     \item[\textbf{E1.1}] Analyse a schematic containing \textbf{only combinational logic} and display a standard numeric truth table for that sheet.
     \medskip
@@ -23,7 +25,7 @@ The improved version of Issie delivered by this project must be able to:
     \item[\textbf{E1.5}] Give users the option to filter the truth table by fixing input or output values.
     \medskip
     \item[\textbf{\textbf{E1.6}}] Truth Tables must be displayed in a clear and easy to understand format, and features involving truth tables (e.g. filtering, reducing etc.) must be presented in an intuitive way.
-    \item[\textbf{\textbf{E1.7}}] Truth Table generation and reduction must take no longer than 4 seconds.
+    \item[\textbf{\textbf{E1.7}}] Truth Table generation and reduction must take no longer than 4 seconds, with an ideal target of under 2 seconds.
     \item[\textbf{\textbf{E1.8}}] Graphical manipulation operations on the Truth Table, such as re-ordering rows, sorting etc. should appear instantaneous (i.e. take less than 100ms).
     \item[\textbf{E1.9}] Use the above features to give users a clearer insight into the digital logic on the schematic, or to further reinforce their existing understanding.
 \end{itemize}
@@ -67,20 +69,22 @@ The improved version of Issie delivered by this project must be able to:
 % \end{itemize}
 
 \section{Software/Documentation Quality Requirements}
+In the process of adding new combinational logic visualisation methods to Issie, this project will also make significant additions/changes to the Issie codebase. This section highlights the requirements for the quality of the software contributed, along with the documentation for said software.
 \subsection*{Essential requirements}
 \begin{itemize}
-    \item[\textbf{E3.1}] Deliver performant, working, bug-free code which adheres to Issie's code guidelines and other principles such as "MVU-ness".
+    \item[\textbf{E2.1}] Deliver performant, working, bug-free code which adheres to Issie's code guidelines and other principles such as "MVU-ness".
     \medskip
-    \item[\textbf{E3.2}] Write comments in the delivered code which adequately explain it such that it may be worked on in the future by other developers. 
+    \item[\textbf{E2.2}] Write comments in the delivered code which adequately explain it such that it may be worked on in the future by other developers. 
     \medskip
-    \item[\textbf{E3.3}] Deliver code that is easy to maintain for future developers.
+    \item[\textbf{E2.3}] Deliver code that is easy to maintain for future developers.
     \medskip
-    \item[\textbf{E3.4}] Provide any other necessary documentation.
+    \item[\textbf{E2.4}] Provide any other necessary documentation.
 \end{itemize}
 
 \subsection*{Desired features}
 \begin{itemize}
-    \item[\textbf{D3.1}] Deliver a tweaked, or possibly partially redesigned UI which exposes all Issie features in a straightforward and intuitive way to the user, with a focus on extensibility (i.e. can the UI accommodate for future extensions to Issie?)
+    \item[\textbf{D2.1}] Deliver a tweaked, or possibly partially redesigned UI which exposes all Issie features in a straightforward and intuitive way to the user, with a focus on extensibility (i.e. can the UI accommodate for future extensions to Issie?)
     \medskip
-    \item[\textbf{D3.2}] Update the Issie website with information about any newly added features.
+    \item[\textbf{D2.2}] Update the Issie website with information about any newly added features.
 \end{itemize}
+
